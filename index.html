@@ -244,6 +244,12 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
 .award p { font-size: 15px; }
 .award .quip { color: var(--muted); font-size: 14px; }
 
+.closing {
+  margin-top: 64px; padding-top: 40px; border-top: 2px dashed var(--line);
+  display: grid; gap: 16px; justify-items: center; text-align: center;
+}
+.closing h2 { font-size: clamp(26px, 6vw, 34px); line-height: 1.25; }
+.closing p { color: var(--muted); max-width: 22em; }
 .tips { display: grid; gap: 14px; }
 .tip { display: grid; gap: 2px; }
 .tip b { color: var(--brick); }
@@ -509,6 +515,12 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
     </div>
     <p class="note">三個獎分開算，可以一人通吃；同分就並列。</p>
   </section>
+
+  <div class="closing">
+    <h2>想好你的三件事了嗎？</h2>
+    <p>活動前 5 天截止，答案只有主持人看得到。</p>
+    <a class="btn" href="#entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>報名並寫下三件事</a>
+  </div>
 
 </main>
 
