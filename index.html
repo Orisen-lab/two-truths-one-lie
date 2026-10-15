@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>兩真一假交流會</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* 版面：單欄閱讀，標題用圓體帶玩心；卡片只用在報名表、範例、測謊卡、獎項 */
+:root {
+  --bg: #F6EFE4;
+  --surface: #FFFAF2;
+  --ink: #3B2A22;
+  --muted: #6A5448;
+  --brick: #B04E37;
+  --brick-soft: #F2DCD2;
+  --line: #E5D6C5;
+  --ok: #4F6B3A;
+  --font-display: "Huninn", "Noto Sans TC", "PingFang TC", sans-serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --r-lg: 20px;
+  --r-md: 12px;
+  --pad: 24px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #211915; --surface: #2B211C; --ink: #F1E6DA; --muted: #BCA696;
+    --brick: #E2876D; --brick-soft: #4A2C23; --line: #3D3029; --ok: #A9C48F; color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.75;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 20px; padding-block: 48px 80px; }
+
+p, li, td, th, span, legend {
+  word-break: normal;
+  overflow-wrap: anywhere;
+  line-break: strict;
+  text-wrap: pretty;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; line-break: strict; margin: 0; }
+p { margin: 0; }
+
+/* 開場 */
+.hero { display: grid; gap: 26px; padding-bottom: 40px; border-bottom: 2px dashed var(--line); }
+.hero-tag {
+  display: inline-block; justify-self: start;
+  font-size: 13px; letter-spacing: .12em; color: var(--brick);
+  border: 1.5px solid var(--brick); border-radius: 999px; padding: 2px 14px;
+}
+.hero h1 { font-size: clamp(44px, 11vw, 76px); line-height: 1.1; }
+.hero h1 em { font-style: normal; color: var(--brick); }
+.hero .lead { font-size: 18px; color: var(--muted); max-width: 26em; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 14px; font-size: 14px; white-space: nowrap;
+}
+.chip svg { width: 16px; height: 16px; color: var(--brick); flex: none; }
+.hero-cta { justify-self: start; }
+
+.slide {
+  background: var(--surface); border: 1.5px solid var(--ink); border-radius: var(--r-lg);
+  padding: 20px 22px; display: grid; gap: 12px;
+}
+.slide-top { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); letter-spacing: .06em; }
+.slide-who { font-family: var(--font-display); color: var(--brick); }
+.slide ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.slide li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; }
+.slide li i { font-style: normal; font-family: var(--font-display); color: var(--brick); }
+
+/* 按鈕 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--brick); color: var(--surface); text-decoration: none;
+  border: 0; border-radius: 999px; padding: 10px 26px;
+  font: inherit; font-size: 16px; font-weight: 500; cursor: pointer;
+}
+.btn:hover { filter: brightness(1.06); }
+.btn:focus-visible { outline: 2px solid var(--brick); outline-offset: 3px; }
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn svg { width: 18px; height: 18px; }
+
+/* 段落 */
+section { padding-top: 56px; display: grid; gap: 18px; }
+.sec-no { font-family: var(--font-display); color: var(--brick); font-size: 15px; letter-spacing: .08em; }
+section h2 { font-size: clamp(26px, 6vw, 34px); line-height: 1.25; }
+section h3 { font-size: 20px; margin-top: 10px; }
+.note { color: var(--muted); font-size: 15px; }
+
+ul.dots, ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+ul.dots li { position: relative; padding-left: 20px; }
+ul.dots li::before {
+  content: ""; position: absolute; left: 2px; top: .7em;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--brick);
+}
+ol.steps { counter-reset: s; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; }
+ol.steps li::before {
+  content: counter(s); font-family: var(--font-display);
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--brick); color: var(--surface);
+  display: grid; place-items: center; font-size: 16px; line-height: 1;
+}
+ol.steps li > span { padding-top: 3px; }
+b.k { color: var(--brick); font-weight: 700; }
+
+/* 表格 */
+.table-box { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; padding: 12px 16px; vertical-align: top; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-weight: 500; color: var(--muted); font-size: 13px; letter-spacing: .06em; background: var(--brick-soft); }
+td:first-child { white-space: nowrap; font-weight: 500; }
+td.time { font-variant-numeric: tabular-nums; color: var(--brick); }
+tr.total td { font-weight: 700; background: var(--brick-soft); }
+
+/* 真假組合 */
+.combos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.combo-col {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: 18px 20px; display: grid; gap: 10px; align-content: start;
+}
+.combo-col h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 17px; }
+.combo-col.no h4 { color: var(--muted); }
+.combo-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tf {
+  display: inline-grid; place-items: center; width: 34px; height: 30px;
+  border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.tf.t { background: var(--brick); color: var(--surface); }
+.tf.f { background: transparent; color: var(--brick); border: 1.5px solid var(--brick); }
+.combo-col.no .combo-row { opacity: .8; text-decoration: line-through; }
+.combo-col.no .tf.t { background: var(--muted); }
+.combo-col.no .tf.f { color: var(--muted); border-color: var(--muted); }
+.combo-label { font-size: 14px; color: var(--muted); margin-left: 6px; }
+
+/* 題目範例 */
+.examples { display: grid; gap: 14px; }
+.ex {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: 18px 22px; display: grid; gap: 8px;
+}
+.ex h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 17px; color: var(--brick); }
+.ex ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ex li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
+.ex li i { font-style: normal; font-family: var(--font-display); color: var(--muted); }
+
+/* 報名表 */
+.form {
+  background: var(--surface); border: 1.5px solid var(--ink); border-radius: var(--r-lg);
+  padding: var(--pad); display: grid; gap: 22px;
+}
+.form-intro { display: grid; gap: 4px; }
+.form-intro h3 { margin: 0; font-size: 22px; }
+.field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.field { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.label { font-weight: 500; font-size: 15px; padding: 0; }
+.hint { color: var(--muted); font-size: 14px; }
+input[type="text"], textarea {
+  width: 100%; font: inherit; font-size: 16px; color: var(--ink);
+  background: var(--bg); border: 1.5px solid var(--line); border-radius: var(--r-md);
+  padding: 10px 14px;
+}
+textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
+input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--brick); }
+.invalid input[type="text"], .invalid textarea, input.invalid, textarea.invalid { border-color: var(--brick); background: var(--brick-soft); }
+
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg label { position: relative; cursor: pointer; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg span {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 64px;
+  border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 18px;
+  background: var(--bg); font-size: 15px; white-space: nowrap;
+}
+.seg input:checked + span { background: var(--brick); border-color: var(--brick); color: var(--surface); }
+.seg input:focus-visible + span { outline: 2px solid var(--brick); outline-offset: 2px; }
+.seg input:disabled + span { opacity: .45; cursor: not-allowed; }
+
+.things { display: grid; gap: 14px; }
+.thing {
+  border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px;
+  display: grid; gap: 10px; background: var(--surface);
+}
+.thing-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.thing-no { font-family: var(--font-display); color: var(--brick); font-size: 17px; }
+.count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.thing .seg span { min-width: 56px; padding: 4px 16px; }
+
+.combo-status { font-size: 15px; font-weight: 500; min-height: 1.75em; }
+.combo-status.ok { color: var(--ok); }
+.combo-status.bad { color: var(--brick); }
+
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.form-foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.form-msg { font-size: 15px; }
+.form-msg.ok { color: var(--ok); font-weight: 500; }
+.form-msg.bad { color: var(--brick); font-weight: 500; }
+
+/* 測謊卡 */
+.lie { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px; align-items: start; }
+.card {
+  aspect-ratio: 5 / 7; max-width: 100%;
+  background: var(--brick); color: var(--surface); border-radius: var(--r-lg);
+  padding: 10px; transform: rotate(-3deg);
+  box-shadow: 0 10px 20px -12px rgba(0, 0, 0, .3);
+}
+.card-in {
+  height: 100%; border: 1.5px solid currentColor; border-radius: 10px;
+  display: grid; grid-template-rows: auto 1fr auto; justify-items: center; text-align: center;
+  padding: 18px 14px;
+}
+.card-in small { font-size: 12px; letter-spacing: .2em; opacity: .85; }
+.card-in svg { width: 64px; height: 64px; align-self: center; }
+.card-in strong { font-family: var(--font-display); font-weight: 400; font-size: 30px; display: block; line-height: 1.2; }
+.card-in p { font-size: 13px; line-height: 1.5; margin-top: 6px; }
+.rules { display: grid; gap: 12px; }
+.rule { display: grid; gap: 2px; }
+.rule b { font-weight: 700; }
+.rule span { color: var(--muted); font-size: 15px; }
+
+/* 獎項 */
+.awards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.award {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: 20px; display: grid; gap: 8px; align-content: start;
+}
+.award svg { width: 28px; height: 28px; color: var(--brick); }
+.award h3 { margin: 0; font-size: 22px; }
+.award p { font-size: 15px; }
+.award .quip { color: var(--muted); font-size: 14px; }
+
+.tips { display: grid; gap: 14px; }
+.tip { display: grid; gap: 2px; padding-left: 16px; border-left: 3px solid var(--brick-soft); }
+
+@media (max-width: 640px) {
+  .lie { grid-template-columns: minmax(0, 1fr); }
+  .card { width: 200px; justify-self: center; }
+  .awards, .combos, .field-row { grid-template-columns: minmax(0, 1fr); }
+  .wrap { padding-block: 32px 64px; }
+  .form { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { transform: none; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="hero">
+    <span class="hero-tag">同事交流會</span>
+    <h1>兩真一假？<br><em>也可能一真兩假</em></h1>
+    <p class="lead">今天不聊業績。投影片會放出某個人的三件事，你要先猜是誰，再猜哪幾句是真的。</p>
+    <div class="chips">
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>約 20 人</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>約 90 分鐘</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>全程坐著，飲料點心管夠</span>
+    </div>
+    <div class="slide" aria-label="投影片示意">
+      <div class="slide-top"><span>第 7 位主角</span><span class="slide-who">這是誰的？</span></div>
+      <ol>
+        <li><i>1</i><span>我國小當過一整年的升旗手，因為身高剛好排第一個。</span></li>
+        <li><i>2</i><span>我考了三次路考才拿到駕照，三次都卡在倒車入庫。</span></li>
+        <li><i>3</i><span>我有咖啡師證照，但在家只喝即溶的。</span></li>
+      </ol>
+    </div>
+    <a class="btn hero-cta" href="#entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>報名並寫下三件事</a>
+  </header>
+
+  <section>
+    <span class="sec-no">一</span>
+    <h2>這是什麼局</h2>
+    <p>每天一起上班，你知道隔壁同事週末都在做什麼嗎？這場遊戲要把大家工作以外的那一面挖出來。全程坐著玩，有飲料有點心，不用動腦開會，只要動腦抓騙子。</p>
+    <ul class="dots">
+      <li><b>參加人數：</b>約 20 人</li>
+      <li><b>活動時長：</b>約 90 分鐘，中間有休息</li>
+      <li><b>遊戲規則：</b>每人寫三件關於自己的事，有真有假。輪到你當主角時，大家先猜這三件事是誰的，再逐句猜真假</li>
+      <li><b>道具：</b>題目投影片、手機答題工具、計分表、測謊卡（每人一張）、小獎品</li>
+    </ul>
+  </section>
+
+  <section id="signup">
+    <span class="sec-no">二</span>
+    <h2>報名與準備三件事</h2>
+    <p>請在<b>活動前 5 天</b>填好下方的報名表。答案只有主持人看得到，同事之間看不到彼此填了什麼。</p>
+
+    <h3>真假可以怎麼配</h3>
+    <div class="combos">
+      <div class="combo-col">
+        <h4>可以</h4>
+        <div class="combo-row"><span class="tf t">真</span><span class="tf t">真</span><span class="tf f">假</span><span class="combo-label">兩真一假</span></div>
+        <div class="combo-row"><span class="tf t">真</span><span class="tf f">假</span><span class="tf f">假</span><span class="combo-label">一真兩假</span></div>
+        <p class="note">順序隨你排，真的那句放第幾件都可以。</p>
+      </div>
+      <div class="combo-col no">
+        <h4>不可以</h4>
+        <div class="combo-row"><span class="tf t">真</span><span class="tf t">真</span><span class="tf t">真</span><span class="combo-label">三件都真</span></div>
+        <div class="combo-row"><span class="tf f">假</span><span class="tf f">假</span><span class="tf f">假</span><span class="combo-label">三件都假</span></div>
+        <p class="note">至少要有一件真事，當天才有故事可以講。</p>
+      </div>
+    </div>
+
+    <h3>出題靈感</h3>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>類型</th><th>往這裡挖</th></tr></thead>
+        <tbody>
+          <tr><td>學生時代</td><td>社團、打工、當過的幹部、考試的小插曲</td></tr>
+          <tr><td>生活習慣</td><td>每天固定做的事、吃東西的堅持、收藏</td></tr>
+          <tr><td>旅行經歷</td><td>去過哪裡、在路上遇到的意外</td></tr>
+          <tr><td>隱藏技能</td><td>學過但很少提起的東西、拿過的證照</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>題目範例</h3>
+    <p class="note">每組可能是兩真一假，也可能是一真兩假。</p>
+    <div class="examples">
+      <div class="ex">
+        <h4>學生時代</h4>
+        <ul>
+          <li><i>1</i><span>我國小當過一整年的升旗手，因為身高剛好排第一個。</span></li>
+          <li><i>2</i><span>我高中參加熱舞社，成果發表站過中間的位置。</span></li>
+          <li><i>3</i><span>我到現在還留著國中跟同學寫的交換日記。</span></li>
+        </ul>
+      </div>
+      <div class="ex">
+        <h4>生活習慣</h4>
+        <ul>
+          <li><i>1</i><span>我考了三次路考才拿到駕照，三次都卡在倒車入庫。</span></li>
+          <li><i>2</i><span>我有咖啡師證照，但在家只喝即溶的。</span></li>
+          <li><i>3</i><span>我每天至少走一萬步，週末也不例外。</span></li>
+        </ul>
+      </div>
+      <div class="ex">
+        <h4>旅行經歷</h4>
+        <ul>
+          <li><i>1</i><span>我在日本便利商店被誤認成店員，還真的幫客人指了路。</span></li>
+          <li><i>2</i><span>我為了一碗拉麵排了兩個小時，吃完覺得普通。</span></li>
+          <li><i>3</i><span>我一個人去過同一座城市三次，因為每次都覺得還沒逛完。</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>出題心法</h3>
+    <ul class="dots">
+      <li><b>假中帶真：</b>拿一件真事，只改掉一個細節，像次數、地點、名次。最難抓的通常是這種。</li>
+      <li><b>真中帶假：</b>真事挑最不像你的那件，聽起來就像編的。</li>
+      <li>三句長度、語氣差不多，每句 40 字以內。</li>
+      <li>故事要從真的那幾件裡挑。</li>
+      <li>不拿隱私出題，也不爆別人的料。</li>
+    </ul>
+
+    <form class="form" id="entry" novalidate>
+      <div class="form-intro">
+        <h3>報名表</h3>
+        <p class="hint">填到一半離開也沒關係，用同一台裝置回來，內容還會在。</p>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="g-name">
+          <label class="label" for="f-name">你的名字</label>
+          <input type="text" id="f-name" name="name" maxlength="20" autocomplete="name">
+        </div>
+        <div class="field" id="g-dept">
+          <label class="label" for="f-dept">部門</label>
+          <input type="text" id="f-dept" name="dept" maxlength="20">
+        </div>
+      </div>
+
+      <fieldset class="field" id="g-newbie">
+        <legend class="label">你是今年新加入的同事嗎？</legend>
+        <div class="seg">
+          <label><input type="radio" name="newbie" value="是" id="f-newbie-y"><span>是，我是新同事</span></label>
+          <label><input type="radio" name="newbie" value="否" id="f-newbie-n"><span>不是</span></label>
+        </div>
+        <p class="hint">新同事開場會有 5 分鐘自我介紹時間。</p>
+      </fieldset>
+
+      <div class="things">
+        <div class="thing" id="g-t0">
+          <div class="thing-head"><label class="thing-no" for="f-t0">第一件</label><span class="count" id="c-t0">0／40</span></div>
+          <textarea id="f-t0" name="t0" rows="2" maxlength="40"></textarea>
+          <div class="seg" role="radiogroup" aria-label="第一件是真是假">
+            <label><input type="radio" name="tf0" value="1" id="f-tf0-t"><span>真</span></label>
+            <label><input type="radio" name="tf0" value="0" id="f-tf0-f"><span>假</span></label>
+          </div>
+        </div>
+        <div class="thing" id="g-t1">
+          <div class="thing-head"><label class="thing-no" for="f-t1">第二件</label><span class="count" id="c-t1">0／40</span></div>
+          <textarea id="f-t1" name="t1" rows="2" maxlength="40"></textarea>
+          <div class="seg" role="radiogroup" aria-label="第二件是真是假">
+            <label><input type="radio" name="tf1" value="1" id="f-tf1-t"><span>真</span></label>
+            <label><input type="radio" name="tf1" value="0" id="f-tf1-f"><span>假</span></label>
+          </div>
+        </div>
+        <div class="thing" id="g-t2">
+          <div class="thing-head"><label class="thing-no" for="f-t2">第三件</label><span class="count" id="c-t2">0／40</span></div>
+          <textarea id="f-t2" name="t2" rows="2" maxlength="40"></textarea>
+          <div class="seg" role="radiogroup" aria-label="第三件是真是假">
+            <label><input type="radio" name="tf2" value="1" id="f-tf2-t"><span>真</span></label>
+            <label><input type="radio" name="tf2" value="0" id="f-tf2-f"><span>假</span></label>
+          </div>
+        </div>
+      </div>
+      <p class="combo-status" id="combo-status" aria-live="polite">每一件都要選真或假。</p>
+
+      <fieldset class="field" id="g-story">
+        <legend class="label">當天要分享故事的是第幾件？</legend>
+        <div class="seg">
+          <label><input type="radio" name="story" value="0" id="f-story-0" disabled><span>第一件</span></label>
+          <label><input type="radio" name="story" value="1" id="f-story-1" disabled><span>第二件</span></label>
+          <label><input type="radio" name="story" value="2" id="f-story-2" disabled><span>第三件</span></label>
+        </div>
+        <p class="hint">只能選標成「真」的那幾件，當天講約 1 分鐘。</p>
+      </fieldset>
+
+      <input type="text" name="website" id="f-website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div class="form-foot">
+        <button type="submit" class="btn" id="submit-btn">送出</button>
+        <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <span class="sec-no">三</span>
+    <h2>當天流程</h2>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>時間</th><th>環節</th><th>在做什麼</th></tr></thead>
+        <tbody>
+          <tr><td class="time">5 分鐘</td><td>開場</td><td>說明規則，主持人用自己的題示範一輪，不計分</td></tr>
+          <tr><td class="time">5 分鐘</td><td>新同事自我介紹</td><td>新加入的同事上台打招呼，大家順便多一點線索</td></tr>
+          <tr><td class="time">30 分鐘</td><td>上半場</td><td>10 位主角，每位約 3 分鐘</td></tr>
+          <tr><td class="time">5 分鐘</td><td>中場休息</td><td>補飲料，順便交換情報</td></tr>
+          <tr><td class="time">30 分鐘</td><td>下半場</td><td>另外 10 位主角</td></tr>
+          <tr><td class="time">10 分鐘</td><td>延長賽</td><td>剛才沒問夠的故事，現在追問</td></tr>
+          <tr><td class="time">5 分鐘</td><td>頒獎與抓交替</td><td>三大獎揭曉，下一任主持人出爐</td></tr>
+          <tr class="total"><td class="time">90 分鐘</td><td>合計</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="sec-no">四</span>
+    <h2>每一輪怎麼玩</h2>
+    <ol class="steps">
+      <li><span><b class="k">亮題：</b>投影片放出三件事，先不公布是誰的。</span></li>
+      <li><span><b class="k">猜主角：</b>大家用手機猜這三件事是誰的，送出就不能改。</span></li>
+      <li><span><b class="k">主角現身：</b>主角公布身分，用自己的話把三件事補充說一遍。語氣、表情、停頓都可以拿來混淆真假。</span></li>
+      <li><span><b class="k">拷問：</b>全場最多問兩題，也可以亮測謊卡。主角可以繼續演，遇到不舒服的問題可以不答。</span></li>
+      <li><span><b class="k">判真假：</b>三句各標真或假，倒數後送出，送出就不能改。</span></li>
+      <li><span><b class="k">開獎與說故事：</b>主角公布真假，挑一件真事講約 1 分鐘。</span></li>
+    </ol>
+    <p class="note">自己當主角那輪不用作答；主持人事先知道所有答案，不參與計分。計分只看送出的答案，「我剛剛其實想選真」不算數。</p>
+  </section>
+
+  <section>
+    <span class="sec-no">五</span>
+    <h2>計分與三大獎</h2>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>項目</th><th>怎麼算</th></tr></thead>
+        <tbody>
+          <tr><td>猜主角</td><td>猜對這三件事是誰的，得 1 分</td></tr>
+          <tr><td>判真假</td><td>三句各判一次，判對一句得 1 分</td></tr>
+          <tr class="total"><td>每輪最多</td><td>4 分</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="awards">
+      <div class="award">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <h3>猜題王</h3>
+        <p>全場總分最高。</p>
+        <p class="quip">辦公室測謊機，認證。</p>
+      </div>
+      <div class="award">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7Z"/></svg>
+        <h3>演技王</h3>
+        <p>自己當主角那輪，全場沒拿到的分數加起來最多。</p>
+        <p class="quip">建議往後他說的話打個折。</p>
+      </div>
+      <div class="award">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <h3>猜錯王</h3>
+        <p>全場總分最低，沒作答的題算錯。</p>
+        <p class="quip">每天見面，依然像初次見面。</p>
+      </div>
+    </div>
+    <p class="note">三個獎分開算，可以一人通吃；同分就並列。</p>
+  </section>
+
+  <section>
+    <span class="sec-no">六</span>
+    <h2>測謊卡</h2>
+    <p>每人一張，整場只能用一次。亮卡之後問的問題，主角不准演，只能說實話。</p>
+    <div class="lie">
+      <div class="card" aria-hidden="true">
+        <div class="card-in">
+          <small>整場限用一次</small>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div><strong>測謊卡</strong><p>亮卡後，對方只能說實話</p></div>
+        </div>
+      </div>
+      <div class="rules">
+        <div class="rule"><b>怎麼用</b><span>拷問時亮卡，追加一個問題。這題主角必須說實話。</span></div>
+        <div class="rule"><b>不准問太直接</b><span>不能問「第幾句是真的」「有幾句是真的」「是兩真一假還是一真兩假」，要問得聰明。例如問「你最後一次喝即溶咖啡是什麼時候？」，再看對方怎麼答。</span></div>
+        <div class="rule"><b>每輪限一張</b><span>先亮先用，手慢的人只能等下一輪。</span></div>
+        <div class="rule"><b>另外加問</b><span>測謊卡的問題不算在全場兩題裡面。</span></div>
+        <div class="rule"><b>使用限制</b><span>自己的題不能用；主持人知道答案，沒有卡。</span></div>
+        <div class="rule"><b>拒答退卡</b><span>被問到不舒服的問題可以不答，卡退回給對方。</span></div>
+        <div class="rule"><b>沒用掉就算了</b><span>留到最後也不會換成分數，該出手就出手。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="sec-no">七</span>
+    <h2>下一任主持人怎麼選</h2>
+    <ul class="dots">
+      <li>從還沒主持過的人裡，總分最低的那位接棒。</li>
+      <li>主持過的人照常比賽、照常拿獎，只是這次不用接棒。</li>
+      <li>接棒人選同分時猜拳，輸的人主持。</li>
+      <li>全員都主持過一輪後名單歸零，所有人重新回到危險區。</li>
+    </ul>
+    <p class="note">所以猜錯王不一定就是下一任主持人，因為他可能已經主持過了。</p>
+  </section>
+
+  <section>
+    <span class="sec-no">八</span>
+    <h2>大家一起守的三件事</h2>
+    <div class="tips">
+      <div class="tip"><b>節奏要快</b><span>每輪約 3 分鐘，20 位主角都要輪到。</span></div>
+      <div class="tip"><b>只吐槽遊戲表現</b><span>能力、外貌、感情、工作表現一律不碰。</span></div>
+      <div class="tip"><b>不想講就換題</b><span>主角不想展開的內容，主持人會把話題帶開。</span></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwE8ss60BNEJQL7Ahfd8xZuYJbYF-5VkZpKD0DgzsqunaWLakGvaHsSezNazEka1U5yKg/exec';
+  var DRAFT_KEY = 'tt1f-draft-v1';
+  var NO = ['第一件', '第二件', '第三件'];
+
+  var form = document.getElementById('entry');
+  var $ = function (id) { return document.getElementById(id); };
+  var msg = $('form-msg');
+  var comboStatus = $('combo-status');
+  var submitBtn = $('submit-btn');
+
+  function radioVal(name) {
+    var el = form.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : null;
+  }
+  function truths() {
+    return [0, 1, 2].map(function (i) {
+      var v = radioVal('tf' + i);
+      return v === null ? null : v === '1';
+    });
+  }
+
+  function updateCounts() {
+    [0, 1, 2].forEach(function (i) {
+      var len = Array.from($('f-t' + i).value).length;
+      $('c-t' + i).textContent = len + '／40';
+    });
+  }
+
+  // 回傳 null 代表組合合法，否則回傳要顯示的提醒
+  function comboProblem(t) {
+    if (t.some(function (v) { return v === null; })) return '每一件都要選真或假。';
+    var n = t.filter(Boolean).length;
+    if (n === 3) return '三件都是真的，至少要有一件假的。';
+    if (n === 0) return '三件都是假的，至少要有一件真的。';
+    return null;
+  }
+
+  function updateCombo() {
+    var t = truths();
+    var problem = comboProblem(t);
+    if (problem) {
+      comboStatus.textContent = problem;
+      comboStatus.className = 'combo-status' + (t.every(function (v) { return v !== null; }) ? ' bad' : '');
+    } else {
+      comboStatus.textContent = (t.filter(Boolean).length === 2 ? '兩真一假' : '一真兩假') + '，可以送出。';
+      comboStatus.className = 'combo-status ok';
+    }
+    [0, 1, 2].forEach(function (i) {
+      var r = $('f-story-' + i);
+      r.disabled = t[i] !== true;
+      if (r.disabled && r.checked) r.checked = false;
+    });
+  }
+
+  function collect() {
+    var story = radioVal('story');
+    return {
+      name: $('f-name').value.trim(),
+      dept: $('f-dept').value.trim(),
+      newbie: radioVal('newbie'),
+      things: [0, 1, 2].map(function (i) { return $('f-t' + i).value.trim(); }),
+      truths: truths(),
+      story: story === null ? null : Number(story),
+      website: $('f-website').value
+    };
+  }
+
+  function saveDraft() {
+    try {
+      var d = collect();
+      delete d.website;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    } catch (e) {}
+  }
+
+  function loadDraft() {
+    var d;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { d = null; }
+    if (!d) return;
+    $('f-name').value = d.name || '';
+    $('f-dept').value = d.dept || '';
+    if (d.newbie === '是') $('f-newbie-y').checked = true;
+    if (d.newbie === '否') $('f-newbie-n').checked = true;
+    (d.things || []).forEach(function (t, i) { if ($('f-t' + i)) $('f-t' + i).value = t || ''; });
+    (d.truths || []).forEach(function (v, i) {
+      if (v === true) $('f-tf' + i + '-t').checked = true;
+      if (v === false) $('f-tf' + i + '-f').checked = true;
+    });
+    updateCombo();
+    if (d.story !== null && d.story !== undefined && $('f-story-' + d.story) && !$('f-story-' + d.story).disabled) {
+      $('f-story-' + d.story).checked = true;
+    }
+  }
+
+  function clearMarks() {
+    form.querySelectorAll('.invalid').forEach(function (el) { el.classList.remove('invalid'); });
+  }
+
+  function mark(groupId, focusEl) {
+    var g = $(groupId);
+    if (g) g.classList.add('invalid');
+    if (focusEl && focusEl.focus) focusEl.focus();
+  }
+
+  // 回傳第一個要修正的問題；全部沒問題回傳 null
+  function validate(d) {
+    if (!d.name) return { group: 'g-name', el: $('f-name'), text: '請填你的名字。' };
+    if (!d.dept) return { group: 'g-dept', el: $('f-dept'), text: '請填部門。' };
+    if (!d.newbie) return { group: 'g-newbie', el: $('f-newbie-y'), text: '請選你是不是今年新加入的同事。' };
+    for (var i = 0; i < 3; i++) {
+      if (!d.things[i]) return { group: 'g-t' + i, el: $('f-t' + i), text: '請寫下' + NO[i] + '。' };
+    }
+    for (var j = 0; j < 3; j++) {
+      if (d.truths[j] === null) return { group: 'g-t' + j, el: $('f-tf' + j + '-t'), text: '請選' + NO[j] + '是真是假。' };
+    }
+    var problem = comboProblem(d.truths);
+    if (problem) return { group: 'g-t0', el: $('f-tf0-t'), text: problem };
+    if (d.story === null) return { group: 'g-story', el: form.querySelector('input[name="story"]:not(:disabled)'), text: '請選當天要分享故事的是第幾件。' };
+    return null;
+  }
+
+  function setMsg(text, kind) {
+    msg.textContent = text;
+    msg.className = 'form-msg' + (kind ? ' ' + kind : '');
+  }
+
+  form.addEventListener('input', function () {
+    updateCounts();
+    updateCombo();
+    saveDraft();
+    if (msg.classList.contains('bad')) { clearMarks(); setMsg('', ''); }
+  });
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    clearMarks();
+    var d = collect();
+    var problem = validate(d);
+    if (problem) {
+      mark(problem.group, problem.el);
+      setMsg(problem.text, 'bad');
+      return;
+    }
+    if (!ENDPOINT) {
+      setMsg('報名表還沒開放，請稍後再來。', 'bad');
+      return;
+    }
+    submitBtn.disabled = true;
+    setMsg('送出中…', '');
+    fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(d) })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res && res.ok) {
+          setMsg('收到了！想修改的話，改完再送一次，主持人會以最新一筆為準。', 'ok');
+          submitBtn.textContent = '修改後再送一次';
+        } else {
+          setMsg('內容有地方不完整，請檢查後再送一次。', 'bad');
+        }
+      })
+      .catch(function () {
+        setMsg('沒有送出去，請檢查網路後再試一次。一直失敗的話，請私訊主持人。', 'bad');
+      })
+      .then(function () { submitBtn.disabled = false; });
+  });
+
+  loadDraft();
+  updateCounts();
+  updateCombo();
+})();
+</script>
+</body>
+</html>
