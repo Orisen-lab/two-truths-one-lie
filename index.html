@@ -216,6 +216,8 @@ input[type="text"], textarea {
 textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
 input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mustard); }
 .invalid input[type="text"], .invalid textarea { border-color: var(--bad); }
+input[type="text"]:disabled, textarea:disabled, .seg input:disabled + span { opacity: .55; cursor: not-allowed; }
+.btn:disabled.is-done { opacity: 1; cursor: default; background: transparent; color: var(--mustard); box-shadow: inset 0 0 0 1.5px var(--mustard); }
 
 .things { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .thing { border: 1.5px solid var(--block-line); border-radius: var(--r-lg); padding: 16px; display: grid; gap: 12px; align-content: start; }
@@ -583,7 +585,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
         if (res && res.ok) {
           done = true;
           setMsg('收到了！送出後就不能修改，需要修改請洽主持人。', 'ok');
-          submitBtn.textContent = '已送出';
+          submitBtn.textContent = '已送出'; submitBtn.classList.add('is-done');
           form.querySelectorAll('input, textarea, button').forEach(function (el) { el.disabled = true; });
           try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
         } else if (res && res.error === 'duplicate') {
