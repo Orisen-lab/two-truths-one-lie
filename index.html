@@ -179,8 +179,27 @@ p { margin: 0; }
 .tip b { font-size: 18px; font-weight: 900; }
 .tip span { color: var(--muted); }
 
-/* 報名表 */
-.form-block { display: grid; gap: 28px; scroll-margin-top: 16px; }
+/* 報名表浮動框 */
+html:has(dialog[open]) { overflow: hidden; }
+.sheet {
+  width: min(920px, calc(100% - 32px)); max-width: none;
+  max-height: calc(100dvh - 32px); margin: auto; padding: 0; border: 0;
+  border-radius: var(--r-xl); background: var(--block); color: var(--block-fg);
+  overflow: auto; overscroll-behavior: contain;
+}
+.sheet::backdrop { background: rgba(10, 10, 10, .72); }
+.sheet-in { position: relative; padding: clamp(24px, 5vw, 48px); }
+.sheet-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 44px; height: 44px; display: grid; place-items: center;
+  background: transparent; color: var(--block-fg); border: 1.5px solid var(--block-line);
+  border-radius: 50%; cursor: pointer;
+}
+.sheet-close:hover { border-color: var(--block-fg); }
+.sheet-close:focus-visible { outline: 2px solid var(--mustard); outline-offset: 2px; }
+.sheet-close svg { width: 20px; height: 20px; }
+.form-block { display: grid; gap: 28px; }
+.form-head { padding-right: 52px; }
 .form-head { display: grid; gap: 10px; }
 .form-head h2 { font-size: clamp(44px, 9vw, 96px); font-weight: 900; line-height: 1; letter-spacing: -.01em; }
 .form-head p { color: var(--block-muted); font-size: 15px; }
@@ -240,6 +259,8 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
   .idea:nth-child(n+3) { border-top: 1px solid var(--line); }
 }
 @media (max-width: 640px) {
+  .sheet { width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: var(--r-lg); }
+  .sheet-close { top: 12px; right: 12px; }
   .intro, .combos, .tips, .field-row { grid-template-columns: minmax(0, 1fr); }
   .facts { grid-template-columns: minmax(0, 1fr); }
   .fact { padding: 14px 0; }
@@ -355,9 +376,11 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
     </div>
   </section>
 
-  <section class="block form-block" id="entry">
+  <dialog class="sheet" id="entry" aria-labelledby="entry-title">
+    <div class="sheet-in form-block">
+    <button type="button" class="sheet-close" aria-label="關閉報名表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="form-head">
-      <h2>報名表</h2>
+      <h2 id="entry-title">報名表</h2>
       <p>請在 <b class="nw">10/23（五）17:00</b> 前送出。填到一半離開也沒關係，用同一台裝置回來，內容還會在。</p>
     </div>
 
@@ -409,7 +432,8 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
         <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
       </div>
     </form>
-  </section>
+    </div>
+  </dialog>
 
   <div class="closing">
     <h2>想好你的三件事了嗎？</h2>
@@ -571,6 +595,20 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
   loadDraft();
   updateCounts();
   updateCombo();
+})();
+</script>
+<script>
+(function () {
+  var sheet = document.getElementById('entry');
+  if (!sheet || typeof sheet.showModal !== 'function') return;
+  function openSheet(ev) {
+    if (ev) ev.preventDefault();
+    if (!sheet.open) sheet.showModal();
+  }
+  document.querySelectorAll('a[href="#entry"]').forEach(function (a) { a.addEventListener('click', openSheet); });
+  sheet.querySelector('.sheet-close').addEventListener('click', function () { sheet.close(); });
+  sheet.addEventListener('click', function (ev) { if (ev.target === sheet) sheet.close(); });
+  if (location.hash === '#entry') openSheet();
 })();
 </script>
 </body>
