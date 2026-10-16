@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-/* 版面：單欄閱讀，標題用圓體帶玩心；卡片只用在報名表、範例、獎項 */
+/* 版面：單欄閱讀，標題用圓體帶玩心；卡片只用在報名表與範例 */
 :root {
   --bg: #F6EFE4;
   --surface: #FFFAF2;
@@ -91,23 +91,12 @@ section h2 { font-size: clamp(26px, 6vw, 34px); line-height: 1.25; }
 section h3 { font-size: 20px; margin-top: 10px; }
 .note { color: var(--muted); font-size: 15px; }
 
-ul.dots, ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+ul.dots { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 ul.dots li { position: relative; padding-left: 20px; }
 ul.dots li::before {
   content: ""; position: absolute; left: 2px; top: .7em;
   width: 7px; height: 7px; border-radius: 50%; background: var(--brick);
 }
-ol.steps { counter-reset: s; }
-ol.steps li { counter-increment: s; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; }
-ol.steps li::before {
-  content: counter(s); font-family: var(--font-display);
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--brick); color: var(--surface);
-  display: grid; place-items: center; font-size: 16px; line-height: 1;
-}
-ol.steps li > span { padding-top: 3px; }
-b.k { color: var(--brick); font-weight: 700; }
-
 /* 表格 */
 .table-box { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
 table { width: 100%; border-collapse: collapse; font-size: 15px; }
@@ -115,8 +104,6 @@ th, td { text-align: left; padding: 12px 16px; vertical-align: top; border-botto
 tr:last-child td { border-bottom: 0; }
 th { font-weight: 500; color: var(--muted); font-size: 13px; letter-spacing: .06em; background: var(--brick-soft); }
 td:first-child { white-space: nowrap; font-weight: 500; }
-td.time { font-variant-numeric: tabular-nums; color: var(--brick); }
-tr.total td { font-weight: 700; background: var(--brick-soft); }
 
 /* 真假組合 */
 .combos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -199,17 +186,6 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
 .form-msg.ok { color: var(--ok); font-weight: 500; }
 .form-msg.bad { color: var(--brick); font-weight: 500; }
 
-/* 獎項 */
-.awards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.award {
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
-  padding: 20px; display: grid; gap: 8px; align-content: start;
-}
-.award svg { width: 28px; height: 28px; color: var(--brick); }
-.award h3 { margin: 0; font-size: 22px; }
-.award p { font-size: 15px; }
-.award .quip { color: var(--muted); font-size: 14px; }
-
 /* 結尾 */
 .closing {
   margin-top: 64px; padding-top: 40px; border-top: 2px dashed var(--line);
@@ -219,7 +195,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
 .closing p { color: var(--muted); max-width: 28em; }
 
 @media (max-width: 640px) {
-  .awards, .combos, .field-row { grid-template-columns: minmax(0, 1fr); }
+  .combos, .field-row { grid-template-columns: minmax(0, 1fr); }
   .wrap { padding-block: 32px 64px; }
   .form { padding: 18px; }
 }
@@ -231,7 +207,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
   <header class="hero">
     <span class="hero-tag">10月交流會</span>
     <h1>真假三件事</h1>
-    <p class="lead">猜猜哪句真？哪句假？</p>
+    <p class="lead">寫下三件關於你的事</p>
     <div class="chips">
       <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>10/30（五）16:30</span>
       <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>約 70 分鐘</span>
@@ -243,12 +219,11 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
   <section>
     <span class="sec-no">一</span>
     <h2>活動說明</h2>
-    <p>每天一起上班，你知道隔壁同事週末都在做什麼嗎？這場遊戲要把大家工作以外的那一面挖出來。不用動腦開會，只要動腦抓騙子。</p>
+    <p>每天一起上班，你知道隔壁同事週末都在做什麼嗎？這次交流會，想多認識大家工作以外的那一面。</p>
     <ul class="dots">
       <li><b>活動時間：</b><span class="nw">10/30（五）16:30</span> 開始，<span class="nw">約 70 分鐘</span></li>
       <li><b>參加人數：</b>約 20 人</li>
       <li><b>報名截止：</b><span class="nw">10/23（五）17:00</span></li>
-      <li><b>遊戲規則：</b>每人寫三件關於自己的事，有真有假。輪到你當主角時，大家逐句猜真假</li>
     </ul>
   </section>
 
@@ -317,7 +292,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
 
     <h3>出題心法</h3>
     <ul class="dots">
-      <li><b>假的要整件沒發生過：</b>不能只改一個數字或細節，不然開獎時很難說它是假的。</li>
+      <li><b>假的要整件沒發生過：</b>不能只改一個數字或細節，不然很難說它是假的。</li>
       <li><b>假中帶真：</b>借用你真的去過的地方、認識的人或有的習慣，編一件沒發生過的事。</li>
       <li><b>真中帶假：</b>真事挑最不像你的那件，聽起來就像編的。</li>
       <li>三句長度、語氣差不多，每件 30 字以內，標點符號也算。</li>
@@ -376,70 +351,6 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--br
         <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
       </div>
     </form>
-  </section>
-
-  <section>
-    <span class="sec-no">三</span>
-    <h2>當天流程</h2>
-    <div class="table-box">
-      <table>
-        <thead><tr><th>時間</th><th>環節</th><th>在做什麼</th></tr></thead>
-        <tbody>
-          <tr><td class="time">5 分鐘</td><td>新同事自我介紹</td><td>新加入的同事上台打招呼，大家順便多一點線索</td></tr>
-          <tr><td class="time">60 分鐘</td><td>猜真假</td><td>20 位主角輪流上場，每位約 3 分鐘</td></tr>
-          <tr><td class="time">5 分鐘</td><td>頒獎</td><td>三大獎揭曉</td></tr>
-          <tr class="total"><td class="time">70 分鐘</td><td>合計</td><td></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section>
-    <span class="sec-no">四</span>
-    <h2>每一輪怎麼玩</h2>
-    <ol class="steps">
-      <li><span><b class="k">亮題：</b>投影片放出主角的三件事。</span></li>
-      <li><span><b class="k">主角說明：</b>主角用自己的話把三件事補充說一遍。語氣、表情、停頓都可以拿來混淆真假。</span></li>
-      <li><span><b class="k">拷問：</b>全場最多問兩題。主角可以繼續演，遇到不舒服的問題可以不答。</span></li>
-      <li><span><b class="k">判真假：</b>三句各標真或假，倒數後送出，送出就不能改。</span></li>
-      <li><span><b class="k">開獎：</b>主角公布哪幾句是真的。</span></li>
-    </ol>
-    <p class="note">自己當主角那輪不用作答；主持人事先知道所有答案，不參與計分。計分只看送出的答案，「我剛剛其實想選真」不算數。</p>
-  </section>
-
-  <section>
-    <span class="sec-no">五</span>
-    <h2>計分與三大獎</h2>
-    <div class="table-box">
-      <table>
-        <thead><tr><th>項目</th><th>怎麼算</th></tr></thead>
-        <tbody>
-          <tr><td>判真假</td><td>三句各判一次，判對一句得 1 分</td></tr>
-          <tr class="total"><td>每輪最多</td><td>3 分</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="awards">
-      <div class="award">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <h3>猜題王</h3>
-        <p>全場總分最高。</p>
-        <p class="quip">辦公室測謊機，認證。</p>
-      </div>
-      <div class="award">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7Z"/></svg>
-        <h3>演技王</h3>
-        <p>自己當主角那輪，全場沒拿到的分數加起來最多。</p>
-        <p class="quip">建議往後他說的話打個折。</p>
-      </div>
-      <div class="award">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <h3>猜錯王</h3>
-        <p>全場總分最低，沒作答的題算錯。</p>
-        <p class="quip">每天見面，依然像初次見面。</p>
-      </div>
-    </div>
-    <p class="note">三個獎分開算，可以一人通吃；同分就並列。</p>
   </section>
 
   <div class="closing">
