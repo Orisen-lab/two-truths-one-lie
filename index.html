@@ -381,7 +381,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
     <button type="button" class="sheet-close" aria-label="關閉報名表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="form-head">
       <h2 id="entry-title">報名表</h2>
-      <p>請在 <b class="nw">10/23（五）17:00</b> 前送出。填到一半離開也沒關係，用同一台裝置回來，內容還會在。</p>
+      <p>請在 <b class="nw">10/23（五）17:00</b> 前送出。每人只能送出一次，送出後不能修改，需要修改請洽主持人。</p>
     </div>
 
     <form id="entry-form" novalidate>
@@ -576,12 +576,18 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
     }
     submitBtn.disabled = true;
     setMsg('送出中…', '');
+    var done = false;
     fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(d) })
       .then(function (r) { return r.json(); })
       .then(function (res) {
         if (res && res.ok) {
-          setMsg('收到了！想修改的話，改完再送一次，主持人會以最新一筆為準。', 'ok');
-          submitBtn.textContent = '修改後再送一次';
+          done = true;
+          setMsg('收到了！送出後就不能修改，需要修改請洽主持人。', 'ok');
+          submitBtn.textContent = '已送出';
+          form.querySelectorAll('input, textarea, button').forEach(function (el) { el.disabled = true; });
+          try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        } else if (res && res.error === 'duplicate') {
+          setMsg('這個名字已經送出過了。需要修改的話，請洽主持人。', 'bad');
         } else {
           setMsg('內容有地方不完整，請檢查後再送一次。', 'bad');
         }
@@ -589,7 +595,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--mu
       .catch(function () {
         setMsg('沒有送出去，請檢查網路後再試一次。一直失敗的話，請私訊主持人。', 'bad');
       })
-      .then(function () { submitBtn.disabled = false; });
+      .then(function () { if (!done) submitBtn.disabled = false; });
   });
 
   loadDraft();
