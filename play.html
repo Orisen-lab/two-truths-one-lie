@@ -312,6 +312,8 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
       if (roundChanged) { picked = null; myInfo.choice = null; errorMsg = ''; }
       if (changed) {
         lastKey = key;
+        // 先畫題目，再補上自己的作答與分數，避免卡在載入中
+        if (!sending) render();
         return refreshMe().then(function () { if (!sending) render(); });
       }
     }).catch(function () {});
