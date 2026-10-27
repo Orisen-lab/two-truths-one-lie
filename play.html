@@ -104,9 +104,14 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
 .wait-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--mustard); margin-right: 8px; animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .wait-dot { animation: none; } }
+
+.net { position: sticky; top: 0; z-index: 5; background: var(--bad); color: #151515; font-size: 15px; font-weight: 700; text-align: center; padding: 10px 16px; }
+.net[hidden] { display: none; }
+.reload { justify-self: center; font: inherit; font-size: 14px; color: var(--muted); background: none; border: 0; text-decoration: underline; text-underline-offset: 3px; padding: 8px; cursor: pointer; }
 </style>
 </head>
 <body>
+<div class="net" id="net" role="status" hidden>連線中斷，正在重新連線…</div>
 <main class="app" id="app">
   <div class="top">
     <span class="brand">真假三件事</span>
@@ -120,8 +125,27 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
   var NAME_KEY = 'tt1f-player';
   var app = document.getElementById('app');
 
-  var me = null;
-  try { me = sessionStorage.getItem(NAME_KEY); } catch (e) {}
+  var net = document.getElementById('net');
+  var fails = 0;
+
+  // 名字記在手機上 12 小時，關掉頁面再掃 QR 不用重選
+  function saveName(n) {
+    try { localStorage.setItem(NAME_KEY, JSON.stringify({ n: n, t: Date.now() })); } catch (e) {}
+    try { sessionStorage.setItem(NAME_KEY, n); } catch (e) {}
+  }
+  function loadName() {
+    try {
+      var v = JSON.parse(localStorage.getItem(NAME_KEY) || 'null');
+      if (v && v.n && Date.now() - v.t < 12 * 3600 * 1000) return v.n;
+    } catch (e) {}
+    try { return sessionStorage.getItem(NAME_KEY); } catch (e) { return null; }
+  }
+  function forgetName() {
+    try { localStorage.removeItem(NAME_KEY); } catch (e) {}
+    try { sessionStorage.removeItem(NAME_KEY); } catch (e) {}
+  }
+
+  var me = loadName();
   var state = null;
   var myInfo = { choice: null, score: 0 };
   var picked = null;
@@ -135,12 +159,30 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  // 網路卡住時不無限等待：逾時就當作失敗，讓人可以再按一次
+  function request(url, opts, ms) {
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var t = ctrl ? setTimeout(function () { ctrl.abort(); }, ms) : null;
+    if (ctrl) opts.signal = ctrl.signal;
+    return fetch(url, opts).then(function (r) { return r.json(); })
+      .then(function (res) { clearTimeout(t); return res; }, function (err) { clearTimeout(t); throw err; });
+  }
   function post(body) {
-    return fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+    return request(ENDPOINT, { method: 'POST', body: JSON.stringify(body) }, 10000);
   }
   function get(a) {
-    return fetch(ENDPOINT + '?a=' + a + '&t=' + Date.now()).then(function (r) { return r.json(); });
+    return request(ENDPOINT + '?a=' + a + '&t=' + Date.now(), {}, 8000);
   }
+  function setNet(ok) {
+    fails = ok ? 0 : fails + 1;
+    net.hidden = fails < 2 && navigator.onLine !== false;
+  }
+  function reloadBtn() {
+    return '<button type="button" class="reload" data-reload>畫面沒更新？點這裡重新整理</button>';
+  }
+  app.addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-reload]')) location.reload();
+  });
 
   function top() {
     var right = me
@@ -186,7 +228,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
       '</section>';
     document.getElementById('yes').onclick = function () {
       me = n;
-      try { sessionStorage.setItem(NAME_KEY, n); } catch (e) {}
+      saveName(n);
       lastKey = '';
       tick();
     };
@@ -199,7 +241,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     if (!s || s.phase === 'idle' || !s.protagonist) {
       app.innerHTML = top() +
         '<section class="panel"><h1 class="title">' + esc(me) + '，準備好了嗎？</h1>' +
-        '<p class="sub"><span class="wait-dot"></span>等主持人開始下一輪</p></section>';
+        '<p class="sub"><span class="wait-dot"></span>等主持人開始下一輪</p></section>' + reloadBtn();
       return;
     }
     var isSelf = s.protagonist === me;
@@ -251,7 +293,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
 
     app.innerHTML = top() + '<section class="panel">' + head + list + foot +
       '<p class="msg">' + esc(errorMsg) + '</p></section>' +
-      '<button type="button" class="who" id="switch">不是' + esc(me) + '？重新選名字</button>';
+      '<button type="button" class="who" id="switch">不是' + esc(me) + '？重新選名字</button>' + reloadBtn();
 
     app.querySelectorAll('.choice').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -264,7 +306,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     var send = document.getElementById('send');
     if (send) send.addEventListener('click', submit);
     document.getElementById('switch').addEventListener('click', function () {
-      try { sessionStorage.removeItem(NAME_KEY); } catch (e) {}
+      forgetName();
       me = null;
       start();
     });
@@ -291,7 +333,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
           if (res && res.error === 'already') refreshMe();
         }
       })
-      .catch(function () { errorMsg = '網路不穩，沒有送出去，請再按一次。'; })
+      .catch(function () { errorMsg = '網路不穩，還沒確認送出，請再按一次。重複送出不會多算。'; })
       .then(function () { sending = false; render(); });
   }
 
@@ -304,6 +346,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
   function tick() {
     if (!me) return;
     get('state').then(function (s) {
+      setNet(!!(s && s.ok));
       if (!s || !s.ok) return;
       var key = s.round + '|' + s.phase + '|' + (s.epoch || 0);
       var changed = key !== lastKey;
@@ -317,7 +360,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
         if (!sending) render();
         return refreshMe().then(function () { if (!sending) render(); });
       }
-    }).catch(function () {});
+    }).catch(function () { setNet(false); });
   }
 
   function start() {
@@ -325,12 +368,17 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     if (!me) {
       get('roster').then(function (res) { renderPicker((res && res.names) || []); })
         .catch(function () {
-          app.innerHTML = top() + '<section class="panel"><p class="sub">連不上，請確認網路後重新整理。</p></section>';
+          app.innerHTML = top() + '<section class="panel"><p class="sub">連不上，請確認網路後重新整理。</p></section>' + reloadBtn();
         });
     }
     tick();
     timer = setInterval(function () { tick(); }, 2500 + Math.floor(Math.random() * 800));
   }
+
+  // 手機鎖屏、切回 LINE 再回來，或網路恢復時，馬上對一次進度
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
+  window.addEventListener('online', function () { setNet(true); tick(); });
+  window.addEventListener('offline', function () { fails = 2; net.hidden = false; });
 
   start();
 })();
