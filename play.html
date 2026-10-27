@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>作答｜真假三件事</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 手機作答頁：黑底單欄，跟著主持人的進度切換畫面 */
+:root {
+  --bg: #151515;
+  --card: #1F1E1C;
+  --fg: #F4F3EF;
+  --muted: #A9A59C;
+  --line: #34322E;
+  --mustard: #C9A43B;
+  --on-mustard: #151515;
+  --ok: #8FBF7A;
+  --bad: #E58A7D;
+  --font-num: "Anton", "Noto Sans TC", sans-serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --r-lg: 20px;
+  --r-md: 14px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+p, span, button, li { word-break: normal; overflow-wrap: anywhere; line-break: strict; text-wrap: pretty; }
+h1, h2 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.nw { white-space: nowrap; }
+
+.app { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 18px; min-height: 100dvh; align-content: start; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.brand { font-weight: 900; font-size: 15px; letter-spacing: .06em; }
+.who { font-size: 14px; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 14px; color: var(--muted); cursor: pointer; }
+.score { font-size: 14px; color: var(--muted); }
+.score b { font-family: var(--font-num); font-weight: 400; font-size: 22px; color: var(--mustard); margin: 0 2px; }
+
+.panel { background: var(--card); border-radius: var(--r-lg); padding: 20px; display: grid; gap: 14px; }
+.title { font-size: 26px; font-weight: 900; line-height: 1.25; }
+.sub { color: var(--muted); font-size: 15px; }
+.round-no { font-family: var(--font-num); font-size: 40px; line-height: 1; color: var(--mustard); }
+.round-no small { font-family: var(--font-body); font-size: 15px; color: var(--muted); margin-left: 8px; font-weight: 500; }
+.target {
+  display: inline-flex; align-items: center; justify-self: start;
+  background: var(--mustard); color: var(--on-mustard);
+  border-radius: 999px; padding: 8px 18px; font-weight: 900; font-size: 18px;
+}
+
+.names { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.name-btn {
+  font: inherit; font-size: 17px; font-weight: 700; color: var(--fg);
+  background: transparent; border: 1.5px solid var(--line); border-radius: var(--r-md);
+  padding: 14px 12px; cursor: pointer; text-align: center;
+}
+.name-btn:active { border-color: var(--mustard); }
+input[type="search"] {
+  width: 100%; font: inherit; font-size: 16px; color: var(--fg);
+  background: var(--bg); border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 12px 14px;
+}
+input[type="search"]:focus { outline: none; border-color: var(--mustard); }
+
+.choices { display: grid; gap: 12px; }
+.choice {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center;
+  font: inherit; text-align: left; color: var(--fg);
+  background: transparent; border: 1.5px solid var(--line); border-radius: var(--r-md);
+  padding: 14px 16px; cursor: pointer; min-height: 72px;
+}
+.choice .n { font-family: var(--font-num); font-size: 34px; line-height: 1; color: var(--mustard); text-align: center; }
+.choice .t { font-size: 17px; font-weight: 500; }
+.choice.sel { border-color: var(--mustard); background: rgba(201, 164, 59, .14); }
+.choice:disabled { cursor: default; }
+.choice.correct { border-color: var(--ok); background: rgba(143, 191, 122, .14); }
+.choice.correct .n { color: var(--ok); }
+.choice.dim { opacity: .45; }
+.tag { font-size: 13px; font-weight: 700; margin-left: 6px; }
+.tag.t { color: var(--ok); }
+.tag.f { color: var(--bad); }
+
+.btn {
+  font: inherit; font-size: 18px; font-weight: 900;
+  background: var(--mustard); color: var(--on-mustard);
+  border: 0; border-radius: 999px; padding: 15px 24px; cursor: pointer; width: 100%;
+}
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.ghost { background: transparent; color: var(--fg); border: 1.5px solid var(--line); }
+
+.result { font-size: 28px; font-weight: 900; text-align: center; padding: 6px 0; }
+.result.ok { color: var(--ok); }
+.result.bad { color: var(--bad); }
+.note { font-size: 14px; color: var(--muted); text-align: center; }
+.msg { font-size: 15px; color: var(--bad); text-align: center; min-height: 1.6em; }
+.wait-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--mustard); margin-right: 8px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .wait-dot { animation: none; } }
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <div class="top">
+    <span class="brand">真假三件事</span>
+  </div>
+  <section class="panel"><p class="sub"><span class="wait-dot"></span>載入中…</p></section>
+</main>
+
+<script>
+(function () {
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwE8ss60BNEJQL7Ahfd8xZuYJbYF-5VkZpKD0DgzsqunaWLakGvaHsSezNazEka1U5yKg/exec';
+  var NAME_KEY = 'tt1f-player';
+  var app = document.getElementById('app');
+
+  var me = null;
+  try { me = sessionStorage.getItem(NAME_KEY); } catch (e) {}
+  var state = null;
+  var myInfo = { choice: null, score: 0 };
+  var picked = null;
+  var sending = false;
+  var errorMsg = '';
+  var lastKey = '';
+  var timer = null;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function post(body) {
+    return fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+  }
+  function get(a) {
+    return fetch(ENDPOINT + '?a=' + a + '&t=' + Date.now()).then(function (r) { return r.json(); });
+  }
+
+  function top() {
+    var right = me
+      ? '<span class="score">目前<b>' + myInfo.score + '</b>分</span>'
+      : '';
+    return '<div class="top"><span class="brand">真假三件事</span>' + right + '</div>';
+  }
+
+  /* 選名字 */
+  function renderPicker(names) {
+    var html = top() +
+      '<section class="panel">' +
+      '<h1 class="title">你是哪一位？</h1>' +
+      '<p class="sub">點選自己的名字，之後的作答會記在這個名字底下。</p>' +
+      '<input type="search" id="q" placeholder="輸入名字找找看" autocomplete="off">' +
+      '<div class="names" id="names"></div>' +
+      '</section>';
+    app.innerHTML = html;
+    var box = document.getElementById('names');
+    var q = document.getElementById('q');
+    function draw() {
+      var kw = q.value.trim();
+      box.innerHTML = names.filter(function (n) { return !kw || n.indexOf(kw) >= 0; }).map(function (n) {
+        return '<button type="button" class="name-btn" data-n="' + esc(n) + '">' + esc(n) + '</button>';
+      }).join('') || '<p class="sub">找不到這個名字，請洽主持人。</p>';
+    }
+    q.addEventListener('input', draw);
+    box.addEventListener('click', function (ev) {
+      var b = ev.target.closest('.name-btn');
+      if (!b) return;
+      confirmName(b.getAttribute('data-n'));
+    });
+    draw();
+  }
+
+  function confirmName(n) {
+    app.innerHTML = top() +
+      '<section class="panel">' +
+      '<h1 class="title">確認你是「' + esc(n) + '」？</h1>' +
+      '<p class="sub">選定後今天都會用這個名字作答。</p>' +
+      '<button type="button" class="btn" id="yes">是我</button>' +
+      '<button type="button" class="btn ghost" id="no">選錯了</button>' +
+      '</section>';
+    document.getElementById('yes').onclick = function () {
+      me = n;
+      try { sessionStorage.setItem(NAME_KEY, n); } catch (e) {}
+      lastKey = '';
+      tick();
+    };
+    document.getElementById('no').onclick = start;
+  }
+
+  /* 主畫面 */
+  function render() {
+    var s = state;
+    if (!s || s.phase === 'idle' || !s.protagonist) {
+      app.innerHTML = top() +
+        '<section class="panel"><h1 class="title">' + esc(me) + '，準備好了嗎？</h1>' +
+        '<p class="sub"><span class="wait-dot"></span>等主持人開始下一輪</p></section>';
+      return;
+    }
+    var isSelf = s.protagonist === me;
+    var head =
+      '<div class="round-no">' + s.round + '<small>／' + s.total + ' 位主角</small></div>' +
+      '<h1 class="title">' + esc(s.protagonist) + ' 的三件事</h1>' +
+      '<span class="target">這一輪：找出' + (s.target === '真' ? '真' : '假') + '的那一件</span>';
+
+    var chosen = myInfo.choice || picked;
+    var revealed = s.phase === 'revealed';
+    var canPick = s.phase === 'open' && !isSelf && !myInfo.choice;
+
+    var list = '<div class="choices">' + s.things.map(function (t, i) {
+      var n = i + 1;
+      var cls = 'choice';
+      if (chosen === n) cls += ' sel';
+      var tag = '';
+      if (revealed) {
+        if (s.answer === n) cls += ' correct'; else cls += ' dim';
+        tag = s.truths[i] ? '<span class="tag t">真</span>' : '<span class="tag f">假</span>';
+      }
+      return '<button type="button" class="' + cls + '" data-n="' + n + '"' + (canPick ? '' : ' disabled') + '>' +
+        '<span class="n">' + n + '</span><span class="t">' + esc(t) + tag + '</span></button>';
+    }).join('') + '</div>';
+
+    var foot = '';
+    if (isSelf) {
+      foot = '<p class="note">這一輪你是主角，好好演吧。</p>';
+    } else if (s.phase === 'show') {
+      foot = '<p class="note"><span class="wait-dot"></span>先聽主角說明，等主持人開放作答</p>';
+    } else if (s.phase === 'open') {
+      if (myInfo.choice) {
+        foot = '<p class="note">已送出第 ' + myInfo.choice + ' 件，等主持人揭曉</p>';
+      } else {
+        foot = '<button type="button" class="btn" id="send"' + (picked && !sending ? '' : ' disabled') + '>' +
+          (sending ? '送出中…' : (picked ? '送出第 ' + picked + ' 件' : '先選一件')) + '</button>' +
+          '<p class="note">送出後就不能改</p>';
+      }
+    } else if (s.phase === 'closed') {
+      foot = '<p class="note">' + (myInfo.choice ? '已截止，你選了第 ' + myInfo.choice + ' 件' : '已截止，這一輪你沒有作答') + '</p>';
+    } else if (revealed) {
+      if (myInfo.choice) {
+        var ok = myInfo.choice === s.answer;
+        foot = '<p class="result ' + (ok ? 'ok' : 'bad') + '">' + (ok ? '答對了，得 1 分' : '這輪被騙了') + '</p>';
+      } else {
+        foot = '<p class="note">這一輪你沒有作答</p>';
+      }
+    }
+
+    app.innerHTML = top() + '<section class="panel">' + head + list + foot +
+      '<p class="msg">' + esc(errorMsg) + '</p></section>' +
+      '<button type="button" class="who" id="switch">不是' + esc(me) + '？重新選名字</button>';
+
+    app.querySelectorAll('.choice').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (!canPick) return;
+        picked = Number(b.getAttribute('data-n'));
+        errorMsg = '';
+        render();
+      });
+    });
+    var send = document.getElementById('send');
+    if (send) send.addEventListener('click', submit);
+    document.getElementById('switch').addEventListener('click', function () {
+      try { sessionStorage.removeItem(NAME_KEY); } catch (e) {}
+      me = null;
+      start();
+    });
+  }
+
+  function submit() {
+    if (!picked || sending) return;
+    sending = true;
+    render();
+    post({ a: 'answer', name: me, round: state.round, choice: picked })
+      .then(function (res) {
+        if (res && res.ok) {
+          myInfo.choice = picked;
+          errorMsg = '';
+        } else {
+          var map = {
+            not_open: '這一輪已經截止了。',
+            stale: '題目已經換了，請看新的題目。',
+            already: '這一輪你已經作答過了。',
+            self: '這一輪你是主角，不能作答。',
+            unknown_name: '找不到你的名字，請重新選擇。'
+          };
+          errorMsg = map[res && res.error] || '沒有送出去，請再按一次。';
+          if (res && res.error === 'already') refreshMe();
+        }
+      })
+      .catch(function () { errorMsg = '網路不穩，沒有送出去，請再按一次。'; })
+      .then(function () { sending = false; render(); });
+  }
+
+  function refreshMe() {
+    return post({ a: 'me', name: me }).then(function (res) {
+      if (res && res.ok) { myInfo.choice = res.choice; myInfo.score = res.score; }
+    }).catch(function () {});
+  }
+
+  function tick() {
+    if (!me) return;
+    get('state').then(function (s) {
+      if (!s || !s.ok) return;
+      var key = s.round + '|' + s.phase;
+      var changed = key !== lastKey;
+      var roundChanged = !state || state.round !== s.round;
+      state = s;
+      if (roundChanged) { picked = null; myInfo.choice = null; errorMsg = ''; }
+      if (changed) {
+        lastKey = key;
+        return refreshMe().then(function () { if (!sending) render(); });
+      }
+    }).catch(function () {});
+  }
+
+  function start() {
+    clearInterval(timer);
+    if (!me) {
+      get('roster').then(function (res) { renderPicker((res && res.names) || []); })
+        .catch(function () {
+          app.innerHTML = top() + '<section class="panel"><p class="sub">連不上，請確認網路後重新整理。</p></section>';
+        });
+    }
+    tick();
+    timer = setInterval(function () { tick(); }, 2500 + Math.floor(Math.random() * 800));
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
