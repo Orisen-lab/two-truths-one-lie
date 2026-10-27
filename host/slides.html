@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>簡報｜真假三件事</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* 16:9 簡報：1920×1080 舞台等比縮放；黑底大字，芥末黃只用在重點 */
+:root {
+  --bg: #121212; --card: #1E1D1B; --fg: #F4F3EF; --muted: #A9A59C; --line: #34322E;
+  --mustard: #C9A43B; --mustard-soft: #3A3220; --ok: #8FBF7A; --bad: #E58A7D;
+  --font-num: "Anton", "Noto Sans TC", sans-serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+body { font-family: var(--font-body); color: var(--fg); }
+.stage {
+  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+  transform-origin: center; background: var(--bg); overflow: hidden;
+  padding: 96px 120px; display: flex; flex-direction: column;
+}
+h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: normal; }
+.nw { white-space: nowrap; }
+.num { font-family: var(--font-num); font-weight: 400; }
+.mustard { color: var(--mustard); }
+.kicker { font-size: 30px; font-weight: 700; letter-spacing: .16em; color: var(--muted); }
+.pill {
+  display: inline-flex; align-items: center; align-self: flex-start;
+  background: var(--mustard); color: #151515; border-radius: 999px;
+  padding: 14px 34px; font-size: 40px; font-weight: 900;
+}
+.pill.ghost { background: transparent; color: var(--fg); border: 3px solid var(--fg); }
+
+/* 封面 */
+.cover { justify-content: center; gap: 48px; }
+.cover h1 { font-size: 330px; font-weight: 900; line-height: .9; letter-spacing: -.02em; }
+.cover h1 .mark { position: relative; display: inline-block; }
+.cover h1 .mark::after { content: ""; position: absolute; left: 0; right: 0; bottom: -.08em; height: .1em; background: var(--mustard); border-radius: 999px; }
+.cover h1 small { display: block; font-size: 140px; margin-top: 30px; }
+.cover .meta { display: flex; gap: 56px; align-items: baseline; font-size: 40px; color: var(--muted); }
+.cover .meta .num { font-size: 96px; color: var(--fg); margin-right: 14px; }
+
+/* 一般標題頁 */
+.title-slide { justify-content: center; gap: 40px; }
+.title-slide h1 { font-size: 150px; font-weight: 900; line-height: 1.05; }
+.title-slide p { font-size: 48px; color: var(--muted); font-weight: 500; }
+
+/* 規則 */
+.rules { gap: 56px; }
+.rules h1 { font-size: 96px; font-weight: 900; }
+.cols { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: 40px; flex: 1; }
+.col { background: var(--card); border-radius: 32px; padding: 44px 48px; display: flex; flex-direction: column; gap: 26px; }
+.col h2 { font-size: 46px; font-weight: 900; color: var(--mustard); }
+.col ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 20px; counter-reset: s; }
+.col ol li { counter-increment: s; display: grid; grid-template-columns: 56px 1fr; gap: 14px; font-size: 34px; font-weight: 500; line-height: 1.4; }
+.col ol li::before { content: counter(s); font-family: var(--font-num); font-size: 44px; line-height: 1.05; color: var(--mustard); }
+.col p { font-size: 34px; line-height: 1.5; font-weight: 500; }
+.col .big { font-family: var(--font-num); font-size: 150px; line-height: 1; color: var(--fg); }
+.col .aw { display: grid; gap: 4px; }
+.col .aw b { font-size: 40px; font-weight: 900; }
+.col .aw span { font-size: 28px; color: var(--muted); }
+
+/* 加入作答 */
+.join { flex-direction: row; align-items: center; gap: 110px; }
+.qr { background: #fff; border-radius: 36px; padding: 40px; width: 640px; height: 640px; display: grid; place-items: center; flex: none; }
+.qr img, .qr canvas { width: 560px !important; height: 560px !important; image-rendering: pixelated; }
+.join-text { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.join-text h1 { font-size: 120px; font-weight: 900; line-height: 1.1; }
+.join-text p { font-size: 46px; color: var(--muted); line-height: 1.5; }
+.join-text .url { font-size: 36px; color: var(--mustard); font-weight: 700; overflow-wrap: anywhere; }
+
+/* 出場順序 */
+.order h1 { font-size: 96px; font-weight: 900; margin-bottom: 48px; }
+.order-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 28px; }
+.order-grid div { display: grid; grid-template-columns: 76px 1fr; align-items: baseline; font-size: 44px; font-weight: 700; border-bottom: 2px solid var(--line); padding-bottom: 12px; }
+.order-grid .num { font-size: 50px; color: var(--mustard); }
+
+/* 題目／揭曉 */
+.stage.round { gap: 26px; padding: 64px 100px 52px; }
+.round-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+.round-head .who { display: flex; flex-direction: column; gap: 10px; }
+.round-head .no { font-family: var(--font-num); font-size: 56px; color: var(--mustard); line-height: 1; }
+.round-head .no small { font-size: 40px; color: var(--muted); margin-left: 8px; }
+.round-head h1 { font-size: 104px; font-weight: 900; line-height: 1.05; }
+.things { display: grid; gap: 20px; flex: 1; align-content: center; min-height: 0; }
+.thing {
+  display: grid; grid-template-columns: 110px 1fr auto; gap: 34px; align-items: center;
+  background: var(--card); border: 4px solid transparent; border-radius: 32px; padding: 24px 44px;
+  transition: border-color .3s, opacity .3s, background .3s;
+}
+.thing .n { font-family: var(--font-num); font-size: 88px; line-height: 1; color: var(--mustard); text-align: center; }
+.thing .t { font-size: 54px; font-weight: 700; line-height: 1.32; }
+.thing .v { font-size: 64px; font-weight: 900; width: 150px; height: 92px; display: grid; place-items: center; line-height: 1; border-radius: 999px; opacity: 0; transform: scale(.7); transition: opacity .35s, transform .35s; }
+.thing .v.show { opacity: 1; transform: none; }
+.thing .v.t { background: var(--ok); color: #121212; }
+.thing .v.f { background: var(--bad); color: #121212; }
+.thing.hit { border-color: var(--mustard); background: var(--mustard-soft); }
+.thing.dim { opacity: .4; }
+.status { display: flex; justify-content: space-between; align-items: center; gap: 30px; height: 96px; flex: none; overflow: hidden; }
+.status .left { display: flex; gap: 30px; align-items: center; font-size: 40px; color: var(--muted); font-weight: 700; }
+.status .count { font-family: var(--font-num); font-size: 72px; color: var(--fg); }
+.status .stop { font: inherit; font-size: 40px; font-weight: 900; background: var(--mustard); color: #121212; border: 0; border-radius: 999px; padding: 16px 52px; cursor: pointer; white-space: nowrap; }
+.status .stop.again { font-size: 30px; font-weight: 700; background: transparent; color: var(--muted); box-shadow: inset 0 0 0 2px var(--line); padding: 14px 36px; }
+.result-line { font-size: 50px; font-weight: 900; }
+.result-line .num { font-size: 72px; color: var(--mustard); margin: 0 10px; }
+
+/* 每輪結果總覽 */
+.stage.sum { gap: 40px; padding: 64px 100px 64px; }
+.sum .round-head h1 .num { font-size: 120px; }
+.sum-cols { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr; gap: 32px; flex: 1; min-height: 0; }
+.sum-col { background: var(--card); border-radius: 32px; padding: 36px 40px; display: flex; flex-direction: column; gap: 22px; min-height: 0; overflow: hidden; }
+.sum-col h2 { font-size: 48px; font-weight: 900; display: flex; align-items: baseline; gap: 16px; }
+.sum-col h2 span { font-family: var(--font-num); font-weight: 400; font-size: 64px; }
+.sum-col.bad h2 { color: var(--bad); }
+.sum-col.ok h2 { color: var(--ok); }
+.sum-col:not(.bad):not(.ok) h2 { color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; }
+.chip { font-size: 36px; font-weight: 700; padding: 8px 22px; border-radius: 999px; white-space: nowrap; }
+.chip.b { background: rgba(229, 138, 125, .16); color: var(--fg); }
+.chip.o { background: rgba(143, 191, 122, .16); color: var(--fg); }
+.chip.n { color: var(--muted); border: 2px solid var(--line); font-size: 30px; }
+.empty { font-size: 34px; color: var(--muted); }
+
+/* 排行榜 */
+.board h1 { font-size: 80px; font-weight: 900; margin-bottom: 28px; }
+.board-list { display: grid; gap: 14px; }
+.board-list div { display: grid; grid-template-columns: 110px 1fr 200px; align-items: center; background: var(--card); border-radius: 24px; padding: 12px 36px; font-size: 46px; font-weight: 900; }
+.board-list .num { font-size: 60px; color: var(--mustard); }
+.board-list .s { text-align: right; font-family: var(--font-num); font-size: 60px; font-weight: 400; }
+.board-list .s small { font-family: var(--font-body); font-size: 30px; color: var(--muted); margin-left: 8px; }
+
+/* 三大獎 */
+.awards h1 { font-size: 80px; font-weight: 900; margin-bottom: 36px; }
+.award-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; flex: 1; min-height: 0; }
+.award { background: var(--card); border-radius: 32px; padding: 40px 44px; display: flex; flex-direction: column; gap: 16px; opacity: .25; transition: opacity .4s; min-height: 0; overflow: hidden; }
+.award.show { opacity: 1; }
+.award h2 { font-size: 56px; font-weight: 900; color: var(--mustard); }
+.award .why { font-size: 32px; color: var(--muted); }
+.award .names { font-size: 72px; font-weight: 900; line-height: 1.3; margin-top: auto; }
+.award .val { font-size: 34px; color: var(--muted); }
+.award:not(.show) .names, .award:not(.show) .val { visibility: hidden; }
+
+/* 主持人小工具列：滑鼠移過去才清楚 */
+.hostbar { position: fixed; right: 14px; bottom: 12px; display: flex; gap: 6px; opacity: .18; transition: opacity .2s; z-index: 10; font-family: var(--font-body); }
+.hostbar:hover { opacity: 1; }
+.hostbar button { font: inherit; font-size: 13px; font-weight: 700; background: #222; color: #ddd; border: 1px solid #444; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: #222; color: #eee; font-size: 14px; padding: 8px 16px; border-radius: 999px; z-index: 11; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+/* 主持人控制台：浮在簡報右上，不跟著舞台縮放 */
+.ctl { position: fixed; top: 20px; right: 20px; width: 380px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; background: #1A1917; color: var(--fg); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); z-index: 20; font-size: 15px; overflow: hidden; }
+.ctl[hidden] { display: none; }
+.ctl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 16px 12px 20px; }
+.ctl-head h2 { font-size: 18px; font-weight: 900; }
+.ctl-head p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.ctl-x { flex: none; width: 36px; height: 36px; display: grid; place-items: center; background: transparent; border: 0; color: var(--muted); border-radius: 999px; cursor: pointer; }
+.ctl-x:hover { background: #2A2825; color: var(--fg); }
+.ctl-body { overflow-y: auto; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+.ctl-note { background: var(--mustard-soft); color: var(--fg); border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; }
+.ctl h3 { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--muted); margin-bottom: 8px; }
+.ctl-jumps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ctl button.j, .ctl button.act { font: inherit; font-size: 14px; font-weight: 700; color: var(--fg); background: #24221F; border: 1px solid var(--line); border-radius: 8px; padding: 9px 8px; cursor: pointer; white-space: nowrap; }
+.ctl button.j:hover, .ctl button.act:hover { border-color: var(--muted); }
+.ctl button.j.on { border-color: var(--mustard); color: var(--mustard); }
+.ctl-rounds { display: flex; flex-direction: column; gap: 4px; }
+.ctl-row { display: flex; align-items: center; gap: 6px; }
+.ctl-row button.go { flex: 1; min-width: 0; display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 8px; text-align: left; font: inherit; font-size: 15px; font-weight: 700; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 10px; cursor: pointer; }
+.ctl-row button.go:hover { background: #24221F; }
+.ctl-row button.go.on { border-color: var(--mustard); background: var(--mustard-soft); }
+.ctl-row .no { font-family: var(--font-num); color: var(--mustard); font-weight: 400; }
+.ctl-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctl-row .st { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.ctl-row .st.done { color: var(--ok); }
+.ctl-row button.redo { flex: none; font: inherit; font-size: 12px; font-weight: 700; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; cursor: pointer; white-space: nowrap; }
+.ctl-row button.redo:hover { color: var(--fg); border-color: var(--muted); }
+.ctl-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ctl button.act.warn { grid-column: 1 / -1; color: var(--bad); border-color: rgba(229, 138, 125, .4); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+<div class="hostbar" id="hostbar">
+  <button type="button" data-k="panel">控制台 D</button>
+  <button type="button" data-k="prev">上一步</button>
+  <button type="button" data-k="next">下一步</button>
+  <button type="button" data-k="open">開放作答 O</button>
+  <button type="button" data-k="reload">重新讀取 R</button>
+  <button type="button" data-k="reset">重測這一輪 X</button>
+  <button type="button" data-k="full">全螢幕 F</button>
+</div>
+<div class="toast" id="toast"></div>
+<aside class="ctl" id="ctl" hidden aria-label="主持人控制台"></aside>
+
+<script src="host.js"></script>
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var toastEl = document.getElementById('toast');
+  var view = null;
+  var slides = [];
+  var cur = 0;
+  var step = 0;
+  var progress = { count: 0, eligible: 0 };
+  var pollTimer = null;
+  var lastData = null;
+  var prefetch = Promise.resolve();
+  var aReady = false;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(t) { toastEl.textContent = t; toastEl.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { toastEl.classList.remove('show'); }, 2200); }
+
+  function fit() {
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  /* 投影片清單 */
+  function build() {
+    var list = [{ id: 'cover', type: 'cover' }, { id: 'rules', type: 'rules' }, { id: 'join', type: 'join' },
+      { id: 'newbie', type: 'newbie' }, { id: 'order', type: 'order' }];
+    var n = view ? view.rounds.length : 0;
+    for (var i = 0; i < n; i++) {
+      list.push({ id: 'q' + i, type: 'q', round: i });
+      list.push({ id: 'a' + i, type: 'a', round: i, steps: 4 });
+      list.push({ id: 's' + i, type: 'sum', round: i });
+      if (n >= 12 && i === Math.ceil(n / 2) - 1) list.push({ id: 'half', type: 'board', label: '上半場排行榜' });
+    }
+    if (n) {
+      list.push({ id: 'final', type: 'board', label: '最終排行榜' });
+      list.push({ id: 'awards', type: 'awards', steps: 3 });
+    }
+    list.push({ id: 'end', type: 'end' });
+    var curId = slides[cur] && slides[cur].id;
+    slides = list;
+    var keep = slides.findIndex(function (s) { return s.id === curId; });
+    cur = keep >= 0 ? keep : Math.min(cur, slides.length - 1);
+  }
+
+  function load() {
+    return TT.admin('data').then(function (data) {
+      lastData = data;
+      view = TT.compute(data);
+      build();
+    }).catch(function (e) { toast('讀取資料失敗：' + e.message); });
+  }
+
+  /* 畫面 */
+  function render() {
+    var s = slides[cur];
+    stage.className = 'stage';
+    var html = '';
+    if (s.type === 'cover') {
+      stage.classList.add('cover');
+      html = '<span class="kicker">10月交流會</span>' +
+        '<h1><span class="mark">真假</span><small>三件事</small></h1>' +
+        '<div class="meta"><span><span class="num">10/30</span>週五</span><span><span class="num">' + (view ? view.players.length : '') + '</span>位主角</span></div>';
+    } else if (s.type === 'rules') {
+      stage.classList.add('rules');
+      html = '<h1>今天怎麼玩</h1><div class="cols">' +
+        '<div class="col"><h2>每一輪</h2><ol>' +
+          '<li>放出主角的三件事，手機同步開放作答</li>' +
+          '<li>主角說明，語氣表情都能拿來騙人</li>' +
+          '<li>全場最多問兩個問題</li>' +
+          '<li>主持人喊停，就停止作答</li>' +
+          '<li>揭曉答案，看看誰被騙</li></ol></div>' +
+        '<div class="col"><h2>計分</h2><span class="big">1</span><p>選對得 1 分<br>選錯、沒作答不計分</p><p style="color:var(--muted);font-size:28px">自己當主角那輪不用作答</p></div>' +
+        '<div class="col"><h2>三大獎</h2>' +
+          '<div class="aw"><b>猜題王</b><span>答對最多輪</span></div>' +
+          '<div class="aw"><b>演技王</b><span>自己那輪騙倒最多人</span></div>' +
+          '<div class="aw"><b>猜錯王</b><span>答對最少輪</span></div></div>' +
+        '</div>';
+    } else if (s.type === 'join') {
+      stage.classList.add('join');
+      html = '<div class="qr" id="qr"></div><div class="join-text"><span class="kicker">加入作答</span>' +
+        '<h1>拿出手機<br>掃這個 QR</h1><p>打開後點選自己的名字，<br>接下來每一輪都在手機上作答。</p>' +
+        '<span class="url">' + esc(TT.config.playUrl.replace('https://', '')) + '</span></div>';
+    } else if (s.type === 'newbie') {
+      stage.classList.add('title-slide');
+      html = '<span class="kicker">開始之前</span><h1>新同事<br>自我介紹</h1><p>歡迎加入，先跟大家打聲招呼</p>';
+    } else if (s.type === 'order') {
+      stage.classList.add('order');
+      var order = view ? view.state.order : [];
+      html = '<h1>出場順序</h1>' + (order.length
+        ? '<div class="order-grid">' + order.map(function (n, i) { return '<div><span class="num">' + (i + 1) + '</span><span>' + esc(n) + '</span></div>'; }).join('') + '</div>'
+        : '<p style="font-size:48px;color:var(--muted)">按鍵盤 S 抽出場順序</p>');
+    } else if (s.type === 'q' || s.type === 'a') {
+      html = roundHtml(s);
+    } else if (s.type === 'sum') {
+      html = sumHtml(s);
+    } else if (s.type === 'board') {
+      stage.classList.add('board');
+      var top = view.ranked.slice(0, 5);
+      var prev = null, rank = 0;
+      html = '<h1>' + s.label + '</h1><div class="board-list">' + top.map(function (p, i) {
+        if (p.score !== prev) { rank = i + 1; prev = p.score; }
+        return '<div><span class="num">' + rank + '</span><span>' + esc(p.name) + '</span><span class="s">' + p.score + '<small>分</small></span></div>';
+      }).join('') + '</div>';
+    } else if (s.type === 'awards') {
+      stage.classList.add('awards');
+      var a = view.awards;
+      var names = function (l) {
+        if (!l.length) return '－';
+        var size = l.length === 1 ? 72 : l.length === 2 ? 60 : l.length <= 4 ? 44 : l.length <= 8 ? 34 : 28;
+        return '<span style="font-size:' + size + 'px">' + l.map(function (x) { return '<span class="nw">' + esc(x.name) + '</span>'; }).join(l.length <= 2 ? '<br>' : '、') + '</span>';
+      };
+      var card = function (n, title, why, list, unit) {
+        return '<div class="award' + (step >= n ? ' show' : '') + '"><h2>' + title + '</h2><span class="why">' + why + '</span>' +
+          '<span class="names">' + names(list) + '</span><span class="val">' + (list[0] ? unit.replace('#', list[0].value) : '') + '</span></div>';
+      };
+      html = '<h1>三大獎</h1><div class="award-grid">' +
+        card(1, '演技王', '自己那輪騙倒最多人', a.actor, '騙倒 # 人') +
+        card(2, '猜錯王', '答對最少輪', a.worst, '答對 # 輪') +
+        card(3, '猜題王', '答對最多輪', a.best, '答對 # 輪') + '</div>';
+    } else if (s.type === 'end') {
+      stage.classList.add('title-slide');
+      html = '<span class="kicker">10月交流會</span><h1>謝謝大家</h1><p>下次見面，記得你今天被誰騙過</p>';
+    }
+    stage.innerHTML = html;
+    renderPanel();
+    if (s.type === 'join') drawQr();
+  }
+
+  function roundHtml(s) {
+    var r = view.rounds[s.round];
+    var e = r.entry;
+    stage.classList.add('round');
+    if (!e) return '<h1>找不到這位主角的資料</h1>';
+    var isA = s.type === 'a';
+    var things = e.things.map(function (t, i) {
+      var v = '<span class="v"></span>';
+      var cls = 'thing';
+      if (isA) {
+        var shown = step >= i + 1;
+        v = '<span class="v ' + (e.truths[i] ? 't' : 'f') + (shown ? ' show' : '') + '">' + (e.truths[i] ? '真' : '假') + '</span>';
+        if (step >= 4) cls += i === e.answer ? ' hit' : ' dim';
+      }
+      return '<div class="' + cls + '"><span class="n">' + (i + 1) + '</span><span class="t">' + esc(t) + '</span>' + v + '</div>';
+    }).join('');
+    var status;
+    if (isA) {
+      status = step >= 4
+        ? '<span class="result-line">答對<span class="num">' + r.correct + '</span>人　被騙<span class="num">' + r.fooled + '</span>人</span>'
+        : '<span class="left">' + (step === 0 ? '已停止作答' + (aReady ? '<span>已作答 <span class="count">' + r.answered + '</span>／' + Math.max(0, view.players.length - 1) + '</span>' : '<span>統計中…</span>') : '揭曉中…') + '</span>';
+    } else {
+      var ph = view.state.round === s.round ? view.state.phase : 'show';
+      var label = { show: '作答中', open: '作答中', closed: '已停止作答', revealed: '已揭曉', idle: '作答中' }[ph];
+      // 每一輪只有主持人按這顆才會停止作答，沒有時間限制
+      var btn = ph === 'closed'
+        ? '<button type="button" class="stop again" data-act="reopen">重新開放作答</button>'
+        : (ph === 'revealed' ? '' : '<button type="button" class="stop" data-act="stop">停止作答</button>');
+      status = '<span class="left">' + label + '<span>已作答 <span class="count">' + progress.count + '</span>／' + progress.eligible + '</span></span>' + btn;
+    }
+    return '<div class="round-head"><div class="who"><span class="no">' + String(s.round + 1).padStart(2, '0') + '<small>／' + view.rounds.length + '</small></span>' +
+      '<h1>' + esc(e.name) + '</h1></div><span class="pill">這一輪：找出' + e.target + '的那一件</span></div>' +
+      '<div class="things">' + things + '</div><div class="status">' + status + '</div>';
+  }
+
+  function sumHtml(s) {
+    var r = view.rounds[s.round];
+    var e = r.entry;
+    stage.classList.add('sum');
+    if (!e) return '<h1>找不到這位主角的資料</h1>';
+    var k = TT.key;
+    var right = [], wrong = [], none = [];
+    view.players.forEach(function (p) {
+      if (k(p.name) === k(r.name)) return;
+      var a = r.answers.filter(function (x) { return k(x.voter) === k(p.name); })[0];
+      if (!a) none.push(p.name);
+      else if (a.choice - 1 === e.answer) right.push(p.name);
+      else wrong.push(p.name);
+    });
+    var chips = function (list, cls) {
+      return list.length ? list.map(function (n) { return '<span class="chip ' + cls + '">' + esc(n) + '</span>'; }).join('') : '<span class="empty">沒有人</span>';
+    };
+    return '<div class="round-head"><div class="who"><span class="no">' + String(s.round + 1).padStart(2, '0') + '<small>／' + view.rounds.length + '</small></span>' +
+      '<h1>' + esc(e.name) + ' 騙倒了 <span class="mustard num">' + wrong.length + '</span> 人</h1></div></div>' +
+      '<div class="sum-cols">' +
+      '<div class="sum-col bad"><h2>被騙了<span>' + wrong.length + '</span></h2><div class="chips">' + chips(wrong, 'b') + '</div></div>' +
+      '<div class="sum-col ok"><h2>答對了<span>' + right.length + '</span></h2><div class="chips">' + chips(right, 'o') + '</div></div>' +
+      '<div class="sum-col"><h2>沒作答<span>' + none.length + '</span></h2><div class="chips">' + chips(none, 'n') + '</div></div>' +
+      '</div>';
+  }
+
+  function drawQr() {
+    var box = document.getElementById('qr');
+    if (!box || typeof QRCode === 'undefined') { if (box) box.innerHTML = '<p style="color:#151515;font-size:28px;text-align:center">QR 載入失敗<br>請改用下方網址</p>'; return; }
+    new QRCode(box, { text: TT.config.playUrl, width: 560, height: 560, colorDark: '#151515', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  }
+
+  /* 進入投影片時跟後端同步 */
+  function enter() {
+    stopPoll();
+    var s = slides[cur];
+    var st = view && view.state;
+    var p = Promise.resolve();
+    if ((s.type === 'q' || s.type === 'a') && st && st.round !== s.round) {
+      p = TT.admin('goto', { round: s.round }).then(load);
+    }
+    // 開場幾頁：大家手機回到「等主持人開始」，不會停在上次演練的主角
+    if (['cover', 'rules', 'join', 'newbie', 'order'].indexOf(s.type) >= 0 && st && st.round >= 0) {
+      p = TT.admin('goto', { round: -1 }).then(load);
+    }
+    if (s.type === 'sum') {
+      render();
+      p.then(load).catch(function () {}).then(function () { if (slides[cur] === s) render(); });
+      return;
+    }
+    if (s.type === 'q') progress = { count: view.rounds[s.round].answered, eligible: Math.max(0, view.players.length - 1) };
+    if (s.type === 'a') {
+      aReady = false;
+      render();
+      prefetch = p.then(function () {
+        return (view.state.phase === 'open' ? TT.admin('close') : Promise.resolve()).then(load);
+      }).catch(function (e) { toast('同步失敗：' + e.message); });
+      prefetch.then(function () { aReady = true; if (slides[cur] === s) render(); });
+      return;
+    }
+    if (s.type === 'board' || s.type === 'awards') {
+      render();
+      p.then(load).catch(function (e) { toast('同步失敗：' + e.message); }).then(function () { if (slides[cur] === s) render(); });
+      return;
+    }
+    p.catch(function (e) { toast('同步失敗：' + e.message); }).then(function () {
+      render();
+      if (s.type === 'q') startPoll();
+    });
+  }
+
+  function startPoll() {
+    var tickFn = function () {
+      TT.admin('progress').then(function (res) {
+        progress = { count: res.count, eligible: res.eligible };
+        view.state = res.state;
+        if (slides[cur].type === 'q') render();
+      }).catch(function () {});
+    };
+    tickFn();
+    pollTimer = setInterval(tickFn, 2000);
+  }
+  function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
+
+  /* 操作 */
+  function next() {
+    var s = slides[cur];
+    // 題目頁：還在作答中不往下翻，要先按畫面上的「停止作答」
+    if (s.type === 'q' && view && view.state.round === s.round && view.state.phase === 'open') {
+      toast('還在作答中，先按畫面上的「停止作答」');
+      return;
+    }
+    if (s.steps && step < s.steps) {
+      step++;
+      if (s.type === 'a' && step === 4) {
+        prefetch.then(function () {
+          render();
+          TT.admin('reveal').then(function (res) { view.state = res.state; }).catch(function (e) { toast('揭曉同步失敗：' + e.message); });
+        });
+      } else render();
+      return;
+    }
+    if (cur < slides.length - 1) { cur++; step = 0; enter(); }
+  }
+  function prev() {
+    if (step > 0) { step--; render(); return; }
+    if (cur > 0) {
+      cur--;
+      var s = slides[cur];
+      step = s.steps || 0;
+      enter();
+    }
+  }
+  function openRound() {
+    var s = slides[cur];
+    if (s.type !== 'q') { toast('請在題目頁開放作答'); return; }
+    if (view.state.round === s.round && view.state.phase === 'open') return;
+    TT.admin('open').then(function (res) {
+      view.state = res.state;
+      toast('已重新開放作答');
+      render();
+    }).catch(function (e) { toast('開放失敗：' + e.message); render(); });
+  }
+  function closeRound() {
+    if (slides[cur].type !== 'q') return;
+    TT.admin('close').then(function (res) { view.state = res.state; render(); })
+      .catch(function (e) { toast('停止作答失敗：' + e.message); render(); });
+  }
+  // 演練用：清掉這一輪所有人的作答，回到題目頁重新開放
+  function resetRound() {
+    var s = slides[cur];
+    if (s.round == null || s.round !== view.state.round) { toast('請在這一輪的題目、揭曉或總覽頁按'); return; }
+    if (!confirm('會清掉這一輪所有人的作答，大家手機回到可以重選。確定嗎？')) return;
+    TT.admin('reset_round').then(function (res) {
+      view.state = res.state;
+      for (var i = 0; i < slides.length; i++) if (slides[i].type === 'q' && slides[i].round === s.round) { cur = i; break; }
+      step = 0;
+      toast('這一輪已清空，重新開放作答');
+      return load().then(enter);
+    }).catch(function (e) { toast('重測失敗：' + e.message); });
+  }
+  function shuffle() {
+    if (slides[cur].type !== 'order') { toast('請在出場順序頁抽'); return; }
+    if (view.state.order.length && !confirm('重新抽順序會清掉目前的回合進度，確定嗎？')) return;
+    TT.admin('shuffle').then(load).then(render).catch(function (e) { toast('抽順序失敗：' + e.message); });
+  }
+  function full() {
+    if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {});
+  }
+
+  document.addEventListener('keydown', function (ev) {
+    var k = ev.key;
+    if (k === 'Escape' && !ctl.hidden) { togglePanel(false); return; }
+    if ((k === ' ' || k === 'Enter') && ctl.contains(ev.target)) return;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { ev.preventDefault(); next(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { ev.preventDefault(); prev(); }
+    else if (k === 'o' || k === 'O') openRound();
+    else if (k === 's' || k === 'S') shuffle();
+    else if (k === 'r' || k === 'R') load().then(enter);
+    else if (k === 'x' || k === 'X') resetRound();
+    else if (k === 'f' || k === 'F') full();
+    else if (k === 'd' || k === 'D') togglePanel();
+  });
+  document.getElementById('hostbar').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button');
+    if (!b) return;
+    var k = b.getAttribute('data-k');
+    ({ prev: prev, next: next, open: openRound, reload: function () { load().then(enter); }, reset: resetRound, full: full, panel: function () { togglePanel(); } })[k]();
+    b.blur();
+  });
+
+  stage.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-act]');
+    if (!b) return;
+    b.disabled = true;
+    if (b.getAttribute('data-act') === 'stop') closeRound(); else openRound();
+  });
+
+  /* 主持人控制台：從哪一題開始、清掉演練進度 */
+  var ctl = document.getElementById('ctl');
+  var ctlNote = '';
+  var JUMPS = [['cover', '封面'], ['rules', '規則'], ['join', '掃碼加入'], ['newbie', '新人介紹'], ['order', '出場順序'], ['final', '最終排行'], ['awards', '三大獎'], ['end', '結尾']];
+
+  function jumpTo(id) {
+    var i = slides.findIndex(function (x) { return x.id === id; });
+    if (i < 0) return;
+    cur = i;
+    step = 0;
+    enter();
+  }
+  function renderPanel() {
+    if (ctl.hidden || !view) return;
+    var st = view.state;
+    var curId = slides[cur] && slides[cur].id;
+    var now = st.round < 0 ? '還沒開始，大家手機在等待畫面'
+      : '進行中：第 ' + (st.round + 1) + ' 位 ' + esc(st.order[st.round]) + '・' + ({ open: '作答中', closed: '已停止作答', revealed: '已揭曉', show: '作答中', idle: '' }[st.phase] || '');
+    var jumps = JUMPS.filter(function (j) { return slides.some(function (x) { return x.id === j[0]; }); }).map(function (j) {
+      return '<button type="button" class="j' + (curId === j[0] ? ' on' : '') + '" data-jump="' + j[0] + '">' + j[1] + '</button>';
+    }).join('');
+    var rows = view.rounds.map(function (r, i) {
+      var on = slides[cur] && slides[cur].round === i;
+      var stx = r.revealed ? '<span class="st done">已揭曉・' + r.answered + ' 人作答</span>'
+        : (r.answered ? '<span class="st">' + r.answered + ' 人作答</span>' : '<span class="st">未開始</span>');
+      return '<div class="ctl-row"><button type="button" class="go' + (on ? ' on' : '') + '" data-jump="q' + i + '">' +
+        '<span class="no">' + String(i + 1).padStart(2, '0') + '</span><span class="nm">' + esc(r.name) + '</span>' + stx + '</button>' +
+        (r.revealed || r.answered ? '<button type="button" class="redo" data-redo="' + i + '">清掉重來</button>' : '') + '</div>';
+    }).join('');
+    ctl.innerHTML =
+      '<div class="ctl-head"><div><h2>主持人控制台</h2><p>' + now + '</p></div>' +
+        '<button type="button" class="ctl-x" data-ctl="close" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>' +
+      '<div class="ctl-body">' +
+        (ctlNote ? '<div class="ctl-note">' + ctlNote + '</div>' : '') +
+        '<div><h3>跳到</h3><div class="ctl-jumps">' + jumps + '</div></div>' +
+        (rows ? '<div><h3>從哪一位主角開始</h3><div class="ctl-rounds">' + rows + '</div></div>' : '<p class="ctl-note">還沒抽出場順序，先跳到「出場順序」按 S。</p>') +
+        '<div><h3>其他</h3><div class="ctl-acts">' +
+          '<button type="button" class="act" data-ctl="reload">重新讀取</button>' +
+          '<button type="button" class="act" data-ctl="full">全螢幕</button>' +
+          '<button type="button" class="act warn" data-ctl="clear">清掉所有進度，從頭開始</button>' +
+          (TT.online ? '<button type="button" class="act" data-ctl="logout" style="grid-column:1 / -1">登出這台電腦</button>' : '') +
+        '</div></div>' +
+      '</div>';
+  }
+  function togglePanel(show) {
+    ctl.hidden = show === undefined ? !ctl.hidden : !show;
+    if (ctl.hidden) ctlNote = '';
+    renderPanel();
+  }
+  ctl.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button');
+    if (!b) return;
+    b.blur();
+    var jump = b.getAttribute('data-jump');
+    var redo = b.getAttribute('data-redo');
+    var act = b.getAttribute('data-ctl');
+    if (jump) { ctlNote = ''; jumpTo(jump); return; }
+    if (redo !== null) {
+      var r = Number(redo);
+      if (!confirm('會清掉第 ' + (r + 1) + ' 位 ' + view.rounds[r].name + ' 這一輪所有人的作答，並重新開放。確定嗎？')) return;
+      TT.admin('goto', { round: r }).then(function () { return TT.admin('reset_round'); }).then(load)
+        .then(function () { ctlNote = ''; toast('已清掉這一輪，重新開放作答'); jumpTo('q' + r); })
+        .catch(function (e) { toast('清除失敗：' + e.message); });
+      return;
+    }
+    if (act === 'close') togglePanel(false);
+    else if (act === 'full') full();
+    else if (act === 'logout') { if (confirm('登出後要重新輸入主持人密碼。確定嗎？')) TT.logout(); }
+    else if (act === 'reload') load().then(enter);
+    else if (act === 'clear') {
+      if (!confirm('會清掉所有人的作答與揭曉紀錄，出場順序保留。確定嗎？')) return;
+      TT.admin('clear_answers').then(load).then(function () { ctlNote = ''; toast('已清掉所有進度'); jumpTo('cover'); })
+        .catch(function (e) { toast('清除失敗：' + e.message); });
+    }
+  });
+
+  // 打開簡報時若還留著上次的揭曉或作答，直接打開控制台提醒
+  function checkLeftover() {
+    var st = view && view.state;
+    var n = lastData ? lastData.answers.length : 0;
+    if (!st || (!st.revealed.length && !n)) return;
+    ctlNote = '上次的進度還在：已揭曉 ' + st.revealed.length + ' 輪、作答 ' + n + ' 筆' +
+      (st.round >= 0 ? '，簡報停在第 ' + (st.round + 1) + ' 位 ' + esc(st.order[st.round]) : '') + '。' +
+      '進行到一半重新整理的話，直接關掉這個視窗接著玩；要從頭開始，按最下面「清掉所有進度」。';
+    togglePanel(true);
+  }
+
+  build();
+  render();
+  // 打開簡報時停在線上目前那一輪，不改動大家手機的進度（中途重新整理也能接著玩）
+  TT.ready().then(load).then(function () {
+    var st = view && view.state;
+    if (st && st.round >= 0) {
+      var i = slides.findIndex(function (x) { return x.type === 'q' && x.round === st.round; });
+      if (i >= 0) { cur = i; step = 0; }
+    }
+    enter();
+    checkLeftover();
+  });
+})();
+</script>
+</body>
+</html>

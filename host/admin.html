@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>主持人後台｜真假三件事</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 主持人後台：上方控制列，下方成績總表、各輪統計、三大獎 */
+:root {
+  --paper: #F4F3EF; --card: #FFFFFF; --ink: #151515; --muted: #5F5C56; --line: #DAD7D0;
+  --mustard: #C9A43B; --mustard-soft: #EFE5C4; --ok: #3F7A3A; --bad: #B4483B;
+  --font-num: "Anton", "Noto Sans TC", sans-serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --r-lg: 20px; --r-md: 12px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
+h1, h2 { margin: 0; font-weight: 900; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 60px; display: grid; gap: 24px; }
+.head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
+.head h1 { font-size: 34px; }
+.head p { color: var(--muted); }
+
+.bar { background: var(--ink); color: var(--paper); border-radius: var(--r-lg); padding: 18px 20px; display: grid; gap: 14px; }
+.now { display: flex; gap: 18px; align-items: baseline; flex-wrap: wrap; }
+.now .num { font-family: var(--font-num); font-size: 40px; line-height: 1; color: var(--mustard); }
+.now b { font-size: 22px; }
+.phase { border: 1.5px solid var(--mustard); color: var(--mustard); border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: 14px; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+button {
+  font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
+  border-radius: 999px; padding: 8px 16px; border: 1.5px solid #3A3833; background: transparent; color: var(--paper);
+}
+button.main { background: var(--mustard); border-color: var(--mustard); color: var(--ink); }
+button.warn { color: #E58A7D; border-color: #6A3A33; }
+button:disabled { opacity: .4; cursor: default; }
+.msg { color: var(--mustard); font-size: 14px; min-height: 1.6em; }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { font-size: 20px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .04em; }
+td.n { font-variant-numeric: tabular-nums; text-align: right; }
+td.mk { text-align: center; padding: 8px 4px; font-weight: 700; }
+.ok { color: var(--ok); } .bad { color: var(--bad); } .mute { color: #B5B1A8; }
+.rank { font-family: var(--font-num); font-size: 18px; color: var(--mustard); }
+tr.cur td { background: var(--mustard-soft); }
+
+.awards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.aw { border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 16px; display: grid; gap: 4px; }
+.aw h3 { margin: 0; font-size: 16px; font-weight: 900; }
+.aw p { margin: 0; font-size: 18px; font-weight: 700; }
+.aw small { color: var(--muted); }
+.order { display: flex; flex-wrap: wrap; gap: 6px; }
+.order span { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: 13px; }
+.order span.done { background: var(--mustard-soft); border-color: var(--mustard-soft); }
+@media (max-width: 900px) { .grid2, .awards { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="head">
+    <div><h1>主持人後台</h1><p>每 5 秒自動更新。這一頁只在你的電腦上，不要傳給別人。</p></div>
+    <button type="button" id="csv" style="color:var(--ink);border-color:var(--line)">下載成績表</button>
+  </div>
+
+  <section class="bar">
+    <div class="now" id="now">載入中…</div>
+    <div class="btns">
+      <button type="button" data-op="prev">上一輪</button>
+      <button type="button" data-op="next">下一輪</button>
+      <button type="button" class="main" data-op="open">開放作答</button>
+      <button type="button" data-op="close">停止作答</button>
+      <button type="button" class="main" data-op="reveal">揭曉</button>
+      <button type="button" data-op="reset_round">重測這一輪</button>
+      <button type="button" data-op="shuffle">抽出場順序</button>
+      <button type="button" data-op="append_missing" id="append">把晚報名的人加到最後</button>
+      <button type="button" class="warn" data-op="clear_answers">清除所有作答紀錄</button>
+    </div>
+    <p class="msg" id="msg"></p>
+  </section>
+
+  <section class="card">
+    <h2>三大獎（目前）</h2>
+    <div class="awards" id="awards"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>排行榜</h2>
+      <div class="scroll"><table id="rank"></table></div>
+    </section>
+    <section class="card">
+      <h2>各輪統計</h2>
+      <div class="scroll"><table id="rounds"></table></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>每人每輪對錯</h2>
+    <p style="margin:0;color:var(--muted);font-size:13px">○ 答對　✕ 答錯　－ 沒作答　主 是自己當主角　… 已作答、還沒揭曉</p>
+    <div class="scroll"><table id="matrix"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>出場順序</h2>
+    <div class="order" id="order"></div>
+    <p id="missing" style="margin:0;color:var(--muted);font-size:14px"></p>
+  </section>
+</main>
+
+<script src="host.js"></script>
+<script>
+(function () {
+  var view = null;
+  var busy = false;
+  var $ = function (id) { return document.getElementById(id); };
+  var PHASE = { idle: '尚未開始', show: '題目顯示中', open: '作答中', closed: '已截止', revealed: '已揭曉' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  function load() {
+    return TT.admin('data').then(function (data) { view = TT.compute(data); draw(); })
+      .catch(function (e) { $('msg').textContent = '讀取失敗：' + e.message; });
+  }
+
+  function draw() {
+    var st = view.state;
+    var r = st.round >= 0 ? view.rounds[st.round] : null;
+    $('now').innerHTML = r
+      ? '<span class="num">' + (st.round + 1) + '／' + st.order.length + '</span><b>' + esc(r.name) + '</b>' +
+        '<span class="phase">' + PHASE[st.phase] + '</span>' +
+        '<span>已作答 ' + r.answered + '／' + Math.max(0, view.players.length - 1) + '</span>' +
+        (r.entry ? '<span>找' + r.entry.target + '的，答案第 ' + (r.entry.answer + 1) + ' 件</span>' : '')
+      : '<span class="phase">' + PHASE[st.phase] + '</span><span>' + (st.order.length ? '共 ' + st.order.length + ' 位主角，尚未進入第一輪' : '還沒抽出場順序') + '</span>';
+
+    var mk = function (list) {
+      return list.length ? list.map(function (x) { return esc(x.name); }).join('、') : '－';
+    };
+    var a = view.awards;
+    $('awards').innerHTML =
+      '<div class="aw"><h3>猜題王</h3><p>' + mk(a.best) + '</p><small>' + (a.best[0] ? '答對 ' + a.best[0].value + ' 輪' : '還沒有揭曉的回合') + '</small></div>' +
+      '<div class="aw"><h3>演技王</h3><p>' + mk(a.actor) + '</p><small>' + (a.actor[0] ? '騙倒 ' + a.actor[0].value + ' 人' : '還沒有揭曉的回合') + '</small></div>' +
+      '<div class="aw"><h3>猜錯王</h3><p>' + mk(a.worst) + '</p><small>' + (a.worst[0] ? '答對 ' + a.worst[0].value + ' 輪' : '還沒有揭曉的回合') + '</small></div>';
+
+    var prev = null, rank = 0;
+    $('rank').innerHTML = '<tr><th>名次</th><th>名字</th><th>部門</th><th>答對</th></tr>' +
+      view.ranked.map(function (p, i) {
+        if (p.score !== prev) { rank = i + 1; prev = p.score; }
+        return '<tr><td class="rank">' + rank + '</td><td>' + esc(p.name) + '</td><td>' + esc(p.dept) + '</td><td class="n">' + p.score + '</td></tr>';
+      }).join('');
+
+    $('rounds').innerHTML = '<tr><th>#</th><th>主角</th><th>找</th><th>答案</th><th>作答</th><th>答對</th><th>騙倒</th></tr>' +
+      view.rounds.map(function (r) {
+        var cur = r.index === st.round ? ' class="cur"' : '';
+        return '<tr' + cur + '><td class="n">' + (r.index + 1) + '</td><td>' + esc(r.name) + '</td><td>' + (r.entry ? r.entry.target : '?') + '</td>' +
+          '<td class="n">' + (r.entry ? r.entry.answer + 1 : '?') + '</td><td class="n">' + r.answered + '</td>' +
+          '<td class="n">' + (r.revealed ? r.correct : '…') + '</td><td class="n">' + (r.revealed ? r.fooled : '…') + '</td></tr>';
+      }).join('');
+
+    var sym = { ok: '<span class="ok">○</span>', bad: '<span class="bad">✕</span>', none: '<span class="mute">－</span>', self: '<span class="mute">主</span>', wait: '<span class="mute">…</span>' };
+    $('matrix').innerHTML = '<tr><th>名字</th><th>總分</th>' + view.rounds.map(function (r) { return '<th>' + (r.index + 1) + '</th>'; }).join('') + '</tr>' +
+      view.ranked.map(function (p) {
+        return '<tr><td>' + esc(p.name) + '</td><td class="n">' + p.score + '</td>' + p.marks.map(function (m) { return '<td class="mk">' + sym[m] + '</td>'; }).join('') + '</tr>';
+      }).join('');
+
+    $('order').innerHTML = st.order.map(function (n, i) {
+      return '<span class="' + (st.revealed.indexOf(i) >= 0 ? 'done' : '') + '">' + (i + 1) + '. ' + esc(n) + '</span>';
+    }).join('') || '<span>還沒抽出場順序</span>';
+    $('missing').textContent = view.missing.length ? '還沒排進順序的人：' + view.missing.join('、') : '';
+    $('append').disabled = !view.missing.length || !st.order.length;
+  }
+
+  function act(op) {
+    if (busy || !view) return;
+    var st = view.state;
+    var extra = {};
+    if (op === 'shuffle' && st.order.length && !confirm('重新抽順序會清掉目前的回合進度，確定嗎？')) return;
+    if (op === 'reset_round' && !confirm('會清掉這一輪所有人的作答，並重新開放作答。確定嗎？')) return;
+    if (op === 'clear_answers' && !confirm('會刪掉所有作答紀錄、回到還沒開始的狀態。演練完、正式開始前才按。確定嗎？')) return;
+    if (op === 'prev' || op === 'next') {
+      var r = st.round + (op === 'next' ? 1 : -1);
+      if (r < -1 || r >= st.order.length) return;
+      op = 'goto'; extra.round = r;
+    }
+    busy = true;
+    $('msg').textContent = '處理中…';
+    TT.admin(op, extra).then(function () { $('msg').textContent = ''; return load(); })
+      .catch(function (e) {
+        $('msg').textContent = '沒有成功：' + e.message;
+      })
+      .then(function () { busy = false; });
+  }
+
+  document.querySelectorAll('[data-op]').forEach(function (b) {
+    b.addEventListener('click', function () { act(b.getAttribute('data-op')); });
+  });
+
+  $('csv').addEventListener('click', function () {
+    if (!view) return;
+    var rows = [['名次', '名字', '部門', '答對'].concat(view.rounds.map(function (r) { return '第' + (r.index + 1) + '輪（' + r.name + '）'; }))];
+    var label = { ok: '對', bad: '錯', none: '', self: '主角', wait: '' };
+    view.ranked.forEach(function (p, i) {
+      rows.push([i + 1, p.name, p.dept, p.score].concat(p.marks.map(function (m) { return label[m]; })));
+    });
+    var csv = '﻿' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = '真假三件事成績.csv';
+    a.click();
+  });
+
+  TT.ready().then(function () {
+    load();
+    setInterval(function () { if (!busy) load(); }, 5000);
+  });
+})();
+</script>
+</body>
+</html>
