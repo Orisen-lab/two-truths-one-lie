@@ -305,9 +305,10 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     if (!me) return;
     get('state').then(function (s) {
       if (!s || !s.ok) return;
-      var key = s.round + '|' + s.phase;
+      var key = s.round + '|' + s.phase + '|' + (s.epoch || 0);
       var changed = key !== lastKey;
-      var roundChanged = !state || state.round !== s.round;
+      // 主持人清掉作答重來時，手機上的選擇也一起清掉
+      var roundChanged = !state || state.round !== s.round || (state.epoch || 0) !== (s.epoch || 0);
       state = s;
       if (roundChanged) { picked = null; myInfo.choice = null; errorMsg = ''; }
       if (changed) {
