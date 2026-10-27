@@ -167,8 +167,8 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     return fetch(url, opts).then(function (r) { return r.json(); })
       .then(function (res) { clearTimeout(t); return res; }, function (err) { clearTimeout(t); throw err; });
   }
-  function post(body) {
-    return request(ENDPOINT, { method: 'POST', body: JSON.stringify(body) }, 10000);
+  function post(body, ms) {
+    return request(ENDPOINT, { method: 'POST', body: JSON.stringify(body) }, ms || 10000);
   }
   function get(a) {
     return request(ENDPOINT + '?a=' + a + '&t=' + Date.now(), {}, 8000);
@@ -180,8 +180,16 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
   function reloadBtn() {
     return '<button type="button" class="reload" data-reload>畫面沒更新？點這裡重新整理</button>';
   }
+  function switchBtn() {
+    return '<button type="button" class="who" data-switch>不是' + esc(me) + '？重新選名字</button>';
+  }
   app.addEventListener('click', function (ev) {
     if (ev.target.closest('[data-reload]')) location.reload();
+    if (ev.target.closest('[data-switch]')) {
+      forgetName();
+      me = null;
+      start();
+    }
   });
 
   function top() {
@@ -241,7 +249,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     if (!s || s.phase === 'idle' || !s.protagonist) {
       app.innerHTML = top() +
         '<section class="panel"><h1 class="title">' + esc(me) + '，準備好了嗎？</h1>' +
-        '<p class="sub"><span class="wait-dot"></span>等主持人開始下一輪</p></section>' + reloadBtn();
+        '<p class="sub"><span class="wait-dot"></span>等主持人開始下一輪</p></section>' + switchBtn() + reloadBtn();
       return;
     }
     var isSelf = s.protagonist === me;
@@ -293,7 +301,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
 
     app.innerHTML = top() + '<section class="panel">' + head + list + foot +
       '<p class="msg">' + esc(errorMsg) + '</p></section>' +
-      '<button type="button" class="who" id="switch">不是' + esc(me) + '？重新選名字</button>' + reloadBtn();
+      switchBtn() + reloadBtn();
 
     app.querySelectorAll('.choice').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -305,18 +313,13 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     });
     var send = document.getElementById('send');
     if (send) send.addEventListener('click', submit);
-    document.getElementById('switch').addEventListener('click', function () {
-      forgetName();
-      me = null;
-      start();
-    });
   }
 
   function submit() {
     if (!picked || sending) return;
     sending = true;
     render();
-    post({ a: 'answer', name: me, round: state.round, choice: picked })
+    post({ a: 'answer', name: me, round: state.round, choice: picked }, 20000)
       .then(function (res) {
         if (res && res.ok) {
           myInfo.choice = picked;
@@ -330,7 +333,10 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
             unknown_name: '找不到你的名字，請重新選擇。'
           };
           errorMsg = map[res && res.error] || '沒有送出去，請再按一次。';
-          if (res && res.error === 'already') refreshMe();
+          // 上一次其實已經送到：直接顯示自己送出的那一件
+          if (res && res.error === 'already') {
+            return refreshMe().then(function () { if (myInfo.choice) errorMsg = ''; });
+          }
         }
       })
       .catch(function () { errorMsg = '網路不穩，還沒確認送出，請再按一次。重複送出不會多算。'; })
