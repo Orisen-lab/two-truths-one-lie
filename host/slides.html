@@ -80,7 +80,6 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 .join-text { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
 .join-text h1 { font-size: 120px; font-weight: 900; line-height: 1.1; }
 .join-text p { font-size: 46px; color: var(--muted); line-height: 1.5; }
-.join-text .url { font-size: 36px; color: var(--mustard); font-weight: 700; overflow-wrap: anywhere; }
 
 /* 出場順序 */
 .order h1 { font-size: 96px; font-weight: 900; margin-bottom: 48px; }
@@ -241,7 +240,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 <button type="button" class="rbtn" id="rbtn" aria-label="作答名單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>名單<span class="c" id="rcount"></span></button>
 <aside class="roster" id="roster" aria-label="作答名單"></aside>
 
-<script src="host.js?v=20261029172929"></script>
+<script src="host.js?v=20261029174442"></script>
 <script>
 (function () {
   var stage = document.getElementById('stage');
@@ -344,8 +343,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     } else if (s.type === 'join') {
       stage.classList.add('join');
       html = '<div class="qr" id="qr"></div><div class="join-text"><span class="kicker">加入作答</span>' +
-        '<h1>拿出手機<br>掃這個 QR</h1><p>打開後點選自己的名字，<br>接下來每一輪都在手機上作答。</p>' +
-        '<span class="url">' + esc(TT.config.playUrl.replace('https://', '')) + '</span></div>';
+        '<h1>拿出手機<br>掃這個 QR</h1><p>打開後點選自己的名字，<br>接下來每一輪都在手機上作答。</p></div>';
     } else if (s.type === 'newbie') {
       stage.classList.add('title-slide');
       html = '<span class="kicker">開始之前</span><h1>新同事<br>自我介紹</h1><p>歡迎加入，先跟大家打聲招呼</p>';
@@ -483,7 +481,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 
   function drawQr() {
     var box = document.getElementById('qr');
-    if (!box || typeof QRCode === 'undefined') { if (box) box.innerHTML = '<p style="color:#151515;font-size:28px;text-align:center">QR 載入失敗<br>請改用下方網址</p>'; return; }
+    if (!box || typeof QRCode === 'undefined') { if (box) box.innerHTML = '<p style="color:#151515;font-size:28px;text-align:center;overflow-wrap:anywhere">QR 載入失敗，請手動輸入網址<br>' + esc(TT.config.playUrl.replace('https://', '')) + '</p>'; return; }
     new QRCode(box, { text: TT.config.playUrl, width: 560, height: 560, colorDark: '#151515', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
   }
 
