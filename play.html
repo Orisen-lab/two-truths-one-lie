@@ -52,10 +52,14 @@ p { margin: 0; }
 .round-no { font-family: var(--font-num); font-size: 40px; line-height: 1; color: var(--mustard); }
 .round-no small { font-family: var(--font-body); font-size: 15px; color: var(--muted); margin-left: 8px; font-weight: 500; }
 .target {
-  display: inline-flex; align-items: center; justify-self: start;
+  display: inline-flex; align-items: center; justify-self: start; gap: 8px; white-space: nowrap;
   background: var(--mustard); color: var(--on-mustard);
-  border-radius: 999px; padding: 8px 18px; font-weight: 900; font-size: 18px;
+  border-radius: 999px; padding: 6px 18px; font-weight: 900; font-size: 18px;
 }
+/* 這一輪要找真或假：那個字放大、深底配真假色 */
+.target .tf { display: inline-grid; place-items: center; min-width: 48px; height: 40px; padding: 0 10px; border-radius: 999px; background: var(--bg); font-size: 26px; line-height: 1; }
+.target .tf.t { color: var(--ok); }
+.target .tf.f { color: var(--bad); }
 
 .names { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .name-btn {
@@ -256,7 +260,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     var head =
       '<div class="round-no">' + s.round + '<small>／' + s.total + ' 位主角</small></div>' +
       '<h1 class="title">' + esc(s.protagonist) + ' 的三件事</h1>' +
-      '<span class="target">這一輪：找出' + (s.target === '真' ? '真' : '假') + '的那一件</span>';
+      '<span class="target">這一輪：找出<b class="tf ' + (s.target === '真' ? 't">真' : 'f">假') + '</b>的那一件</span>';
 
     var chosen = myInfo.choice || picked;
     var revealed = s.phase === 'revealed';
@@ -378,7 +382,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
         });
     }
     tick();
-    timer = setInterval(function () { tick(); }, 2500 + Math.floor(Math.random() * 800));
+    timer = setInterval(function () { tick(); }, 2000 + Math.floor(Math.random() * 500));
   }
 
   // 手機鎖屏、切回 LINE 再回來，或網路恢復時，馬上對一次進度
