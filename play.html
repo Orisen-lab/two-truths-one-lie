@@ -125,6 +125,11 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
 
 <script>
 (function () {
+  // 進度先讀中繼（快）；中繼連不上就改讀 Google 後端
+  var RELAY = 'https://tt1f-relay.tinyck-863.workers.dev/state';
+  var relayFails = 0;
+  var relayOffUntil = 0;
+  var ticking = false;
   var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwE8ss60BNEJQL7Ahfd8xZuYJbYF-5VkZpKD0DgzsqunaWLakGvaHsSezNazEka1U5yKg/exec';
   var NAME_KEY = 'tt1f-player';
   var app = document.getElementById('app');
@@ -319,11 +324,22 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     if (send) send.addEventListener('click', submit);
   }
 
+  // 畫面比後端早一點換題：後端還沒跟上時（not_open／stale）自動再送，最多 6 次
+  function sendAnswer(round, choice, tries) {
+    return post({ a: 'answer', name: me, round: round, choice: choice }, 20000).then(function (res) {
+      var early = res && (res.error === 'not_open' || res.error === 'stale');
+      if (early && tries < 6 && state && state.round === round && state.phase === 'open') {
+        return new Promise(function (r) { setTimeout(r, 1000); }).then(function () { return sendAnswer(round, choice, tries + 1); });
+      }
+      return res;
+    });
+  }
+
   function submit() {
     if (!picked || sending) return;
     sending = true;
     render();
-    post({ a: 'answer', name: me, round: state.round, choice: picked }, 20000)
+    sendAnswer(state.round, picked, 0)
       .then(function (res) {
         if (res && res.ok) {
           myInfo.choice = picked;
@@ -353,9 +369,23 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     }).catch(function () {});
   }
 
+  function readState() {
+    if (Date.now() < relayOffUntil) return get('state');
+    return request(RELAY + '?t=' + Date.now(), {}, 4000).then(function (s) {
+      if (!s || !s.ok) throw new Error('relay');
+      relayFails = 0;
+      return s;
+    }).catch(function () {
+      relayFails++;
+      if (relayFails >= 3) { relayOffUntil = Date.now() + 30000; relayFails = 0; }
+      return get('state');
+    });
+  }
+
   function tick() {
-    if (!me) return;
-    get('state').then(function (s) {
+    if (!me || ticking || document.hidden) return;
+    ticking = true;
+    readState().then(function (s) {
       setNet(!!(s && s.ok));
       if (!s || !s.ok) return;
       var key = s.round + '|' + s.phase + '|' + (s.epoch || 0);
@@ -368,9 +398,13 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
         lastKey = key;
         // 先畫題目，再補上自己的作答與分數，避免卡在載入中
         if (!sending) render();
-        return refreshMe().then(function () { if (!sending) render(); });
+        // 揭曉時後端可能比畫面晚一兩秒記下，過幾秒再對一次分數
+        if (s.phase === 'revealed') setTimeout(function () { refreshMe().then(function () { if (!sending) render(); }); }, 4000);
+        // 分數另外補，不卡住下一次讀進度
+        refreshMe().then(function () { if (!sending) render(); });
       }
-    }).catch(function () { setNet(false); });
+    }).catch(function () { setNet(false); })
+      .then(function () { ticking = false; }, function () { ticking = false; });
   }
 
   function start() {
@@ -382,7 +416,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
         });
     }
     tick();
-    timer = setInterval(function () { tick(); }, 2000 + Math.floor(Math.random() * 500));
+    timer = setInterval(function () { tick(); }, 1500 + Math.floor(Math.random() * 300));
   }
 
   // 手機鎖屏、切回 LINE 再回來，或網路恢復時，馬上對一次進度
