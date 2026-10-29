@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>小幫手登記｜真假三件事</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 小幫手登記：手機單欄，一人一列，點 1、2、3 替他記下答案；不顯示正確答案 */
+:root {
+  --paper: #F4F3EF; --card: #FFFFFF; --ink: #151515; --muted: #5F5C56; --line: #DAD7D0;
+  --mustard: #C9A43B; --mustard-soft: #EFE5C4; --ok: #3F7A3A; --bad: #B4483B;
+  --font-num: "Anton", "Noto Sans TC", sans-serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; -webkit-text-size-adjust: 100%; }
+h1, h2, p { margin: 0; }
+p, span, button { word-break: normal; overflow-wrap: anywhere; line-break: strict; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 96px; display: grid; gap: 14px; }
+.head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.head h1 { font-size: 20px; font-weight: 900; }
+select { font: inherit; font-size: 15px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; max-width: 60%; }
+
+.round { background: var(--ink); color: var(--paper); border-radius: 20px; padding: 16px 18px; display: grid; gap: 10px; }
+.round .top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.round .no { font-family: var(--font-num); font-size: 32px; line-height: 1; color: var(--mustard); }
+.round b { font-size: 22px; font-weight: 900; }
+.round .ph { font-size: 13px; font-weight: 700; color: var(--mustard); border: 1.5px solid var(--mustard); border-radius: 999px; padding: 1px 10px; }
+.round ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.round li { display: grid; grid-template-columns: 26px 1fr; gap: 6px; font-size: 14px; color: #D9D6CE; }
+.round li span:first-child { font-family: var(--font-num); color: var(--mustard); font-size: 17px; line-height: 1.4; }
+.round .count { font-size: 14px; color: #D9D6CE; }
+.round .count .num { font-family: var(--font-num); font-size: 22px; color: var(--paper); margin: 0 2px; }
+
+.sync { position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); max-width: 528px; margin: 0 auto; z-index: 5; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 700; box-shadow: 0 6px 20px rgba(0, 0, 0, .12); }
+.sync[hidden] { display: none; }
+.sync.busy { background: var(--card); color: var(--muted); border: 1px solid var(--line); }
+.sync.ok { background: #E6EEDF; color: var(--ok); }
+.sync.wait { background: #F6DFDA; color: var(--bad); }
+.tools { display: flex; gap: 10px; align-items: center; }
+.tools input[type="search"] { flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.tools label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); white-space: nowrap; }
+
+.list { display: grid; gap: 8px; }
+.row { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 10px 10px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.row .nm { display: grid; min-width: 0; }
+.row .nm b { font-size: 17px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .nm span { font-size: 12px; color: var(--muted); }
+.row .nm span.pending { color: var(--bad); font-weight: 700; }
+.row.self { opacity: .5; }
+.pick { display: flex; gap: 6px; }
+.pick button { font-family: var(--font-num); font-size: 24px; line-height: 1; width: 52px; height: 52px; border-radius: 12px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.pick button.on { background: var(--mustard); border-color: var(--mustard); }
+.pick button.on.phone { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.empty { color: var(--muted); font-size: 14px; text-align: center; padding: 16px; }
+.hint { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="head"><h1>小幫手登記</h1><select id="pick" aria-label="選擇回合"></select></div>
+  <section class="round" id="round"><p>載入中…</p></section>
+  <div class="sync ok" id="sync" hidden></div>
+  <div class="tools">
+    <input type="search" id="q" placeholder="找名字" autocomplete="off">
+    <label><input type="checkbox" id="only"> 只看還沒答的</label>
+  </div>
+  <div class="list" id="list"></div>
+  <p class="hint">點 1、2、3 替這個人記下答案，再點一次同一個數字可以取消。黑色是本人用手機送出的，改之前會先確認。網路不穩時會先記在這支手機，連上後自動補送。</p>
+</main>
+
+<script src="host.js?v=20261029151923"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var QKEY = 'tt1f-proxy-queue';
+  var PHASE = { idle: '還沒開始', show: '作答中', open: '作答中', closed: '已停止作答', revealed: '已揭曉' };
+  var data = null;
+  var follow = true;
+  var round = 0;
+  var queue = [];
+  var flying = null;
+  var lastOk = 0;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var key = TT.key;
+
+  try { queue = JSON.parse(localStorage.getItem(QKEY) || '[]') || []; } catch (e) { queue = []; }
+  queue.forEach(function (q) { q.t = q.t || 0; });
+  function saveQueue() { try { localStorage.setItem(QKEY, JSON.stringify(queue)); } catch (e) {} }
+
+  // 讀取途中剛好送出登記的話，這次讀到的是舊資料，不拿來蓋畫面
+  var gen = 0;
+  function load() {
+    var g = gen;
+    return TT.admin('data').then(function (res) { if (g === gen) data = res; lastOk = Date.now(); draw(); })
+      .catch(function () { draw(); });
+  }
+
+  // 這一輪每個人目前的答案：後端的紀錄，再疊上還沒存上的登記
+  function choices(r) {
+    var map = {};
+    if (!data) return map;
+    data.answers.forEach(function (a) { if (a.round === r) map[key(a.voter)] = { choice: a.choice, phone: !a.helper }; });
+    queue.forEach(function (q) {
+      if (q.round !== r) return;
+      if (q.choice) map[key(q.name)] = { choice: q.choice, phone: false, pending: true, late: Date.now() - q.t > 6000 };
+      else delete map[key(q.name)];
+    });
+    return map;
+  }
+
+  function draw() {
+    if (!data) return;
+    var st = data.state;
+    if (!st.order.length) {
+      $('round').innerHTML = '<p>主持人還沒抽出場順序</p>';
+      $('list').innerHTML = '';
+      $('pick').innerHTML = '';
+      return;
+    }
+    if (follow) round = Math.max(1, st.round + 1);
+    $('pick').innerHTML = '<option value="0">跟著目前這一輪</option>' + st.order.map(function (n, i) {
+      return '<option value="' + (i + 1) + '"' + (!follow && round === i + 1 ? ' selected' : '') + '>第 ' + (i + 1) + ' 位 ' + esc(n) + '</option>';
+    }).join('');
+    if (follow) $('pick').value = '0';
+
+    var prot = st.order[round - 1];
+    var e = data.entries.filter(function (x) { return key(x.name) === key(prot); })[0];
+    var map = choices(round);
+    var voters = data.entries.filter(function (x) { return key(x.name) !== key(prot); });
+    var done = voters.filter(function (x) { return map[key(x.name)]; }).length;
+    var ph = st.round + 1 === round ? PHASE[st.phase] : (st.revealed.indexOf(round - 1) >= 0 ? '已揭曉' : (st.round + 1 > round ? '已結束' : '還沒輪到'));
+    $('round').innerHTML =
+      '<div class="top"><span class="no">' + String(round).padStart(2, '0') + '</span><b>' + esc(prot) + '</b><span class="ph">' + ph + '</span></div>' +
+      (e ? '<ol>' + e.things.map(function (t, i) { return '<li><span>' + (i + 1) + '</span><span>' + esc(t) + '</span></li>'; }).join('') + '</ol>' : '') +
+      '<span class="count">已作答<span class="num">' + done + '</span>／' + voters.length + '</span>';
+
+    var kw = $('q').value.trim();
+    var only = $('only').checked;
+    var rows = data.entries.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); })
+      .filter(function (x) { return !kw || x.name.indexOf(kw) >= 0; })
+      .filter(function (x) { return !only || key(x.name) === key(prot) || !map[key(x.name)]; })
+      .map(function (x) {
+        var k = key(x.name);
+        if (k === key(prot)) return '<div class="row self"><div class="nm"><b>' + esc(x.name) + '</b><span>這一輪的主角</span></div></div>';
+        var m = map[k];
+        var note = !m ? '還沒答' : (m.pending ? (m.late ? '還沒存上，會自動補送' : '儲存中…') : (m.phone ? '本人用手機送出' : '小幫手登記'));
+        return '<div class="row"><div class="nm"><b>' + esc(x.name) + '</b><span' + (m && m.late ? ' class="pending"' : '') + '>' + note + '</span></div>' +
+          '<div class="pick">' + [1, 2, 3].map(function (n) {
+            var on = m && m.choice === n;
+            return '<button type="button" data-name="' + esc(x.name) + '" data-c="' + n + '" class="' + (on ? 'on' + (m.phone ? ' phone' : '') : '') + '" aria-label="' + esc(x.name) + ' 選第 ' + n + ' 件">' + n + '</button>';
+          }).join('') + '</div></div>';
+      }).join('');
+    $('list').innerHTML = rows || '<p class="empty">' + (only ? '這一輪大家都答了' : '找不到這個名字') + '</p>';
+
+    var sync = $('sync');
+    var offline = Date.now() - lastOk > 15000;
+    var late = queue.filter(function (q) { return Date.now() - q.t > 6000; }).length;
+    if (late) {
+      sync.hidden = false;
+      sync.className = 'sync wait';
+      sync.textContent = '還有 ' + queue.length + ' 筆還沒存上，網路恢復後會自動補送，不用重按';
+    } else if (queue.length) {
+      sync.hidden = false;
+      sync.className = 'sync busy';
+      sync.textContent = '儲存中…';
+    } else if (offline) {
+      sync.hidden = false;
+      sync.className = 'sync wait';
+      sync.textContent = '連不上網路，畫面可能不是最新；照樣可以登記，連上後會自動補送';
+    } else {
+      sync.hidden = true;
+    }
+  }
+
+  // 登記排隊送出：送成功才從佇列拿掉，失敗就留著下次再送
+  function flush() {
+    if (flying || !queue.length) return;
+    var batch = queue.slice();
+    flying = TT.admin('proxy', { items: batch }).then(function (res) {
+      queue = queue.slice(batch.length);
+      saveQueue();
+      gen++;
+      data = res;
+      lastOk = Date.now();
+    }, function () {}).then(function () { flying = null; draw(); if (queue.length) setTimeout(flush, 3000); });
+  }
+
+  $('list').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-c]');
+    if (!b || !data) return;
+    var name = b.getAttribute('data-name');
+    var c = Number(b.getAttribute('data-c'));
+    var m = choices(round)[key(name)];
+    var choice = m && m.choice === c ? 0 : c;
+    if (m && m.phone && !confirm(name + ' 已經用手機送出第 ' + m.choice + ' 件，確定要' + (choice ? '改成第 ' + choice + ' 件' : '取消') + '嗎？')) return;
+    queue.push({ round: round, name: name, choice: choice, t: Date.now() });
+    saveQueue();
+    draw();
+    flush();
+  });
+  $('pick').addEventListener('change', function () {
+    var v = Number($('pick').value);
+    follow = !v;
+    if (v) round = v;
+    draw();
+  });
+  $('q').addEventListener('input', draw);
+  $('only').addEventListener('change', draw);
+  window.addEventListener('online', flush);
+
+  TT.ready().then(function () {
+    load().then(flush);
+    setInterval(function () { if (!flying) load(); if (queue.length) flush(); }, 3000);
+  });
+})();
+</script>
+</body>
+</html>

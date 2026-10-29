@@ -114,6 +114,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 .status .count { font-family: var(--font-num); font-size: 72px; color: var(--fg); }
 .status .stop { font: inherit; font-size: 40px; font-weight: 900; background: var(--mustard); color: #121212; border: 0; border-radius: 999px; padding: 16px 52px; cursor: pointer; white-space: nowrap; }
 .status .stop.again { font-size: 30px; font-weight: 700; background: transparent; color: var(--muted); box-shadow: inset 0 0 0 2px var(--line); padding: 14px 36px; }
+.status .hand { display: inline-flex; align-items: center; gap: 12px; align-self: center; color: var(--mustard); font-size: 34px; white-space: nowrap; }
+.status .hand svg { width: 40px; height: 40px; flex: none; }
 .result-line { font-size: 50px; font-weight: 900; }
 .result-line .num { font-size: 72px; color: var(--mustard); margin: 0 10px; }
 
@@ -204,7 +206,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 <div class="toast" id="toast"></div>
 <aside class="ctl" id="ctl" hidden aria-label="主持人控制台"></aside>
 
-<script src="host.js?v=20261029134057"></script>
+<script src="host.js?v=20261029151923"></script>
 <script>
 (function () {
   var stage = document.getElementById('stage');
@@ -239,8 +241,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 
   /* 投影片清單 */
   function build() {
-    var list = [{ id: 'cover', type: 'cover' }, { id: 'rules', type: 'rules' }, { id: 'join', type: 'join' },
-      { id: 'newbie', type: 'newbie' }, { id: 'order', type: 'order' }];
+    var list = [{ id: 'cover', type: 'cover' }, { id: 'newbie', type: 'newbie' }, { id: 'rules', type: 'rules' },
+      { id: 'join', type: 'join' }, { id: 'order', type: 'order' }];
     var n = view ? view.rounds.length : 0;
     for (var i = 0; i < n; i++) {
       list.push({ id: 'q' + i, type: 'q', round: i });
@@ -379,7 +381,11 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       var btn = ph === 'closed'
         ? '<button type="button" class="stop again" data-act="reopen">重新開放作答</button>'
         : (ph === 'revealed' ? '' : '<button type="button" class="stop" data-act="stop">停止作答</button>');
-      status = '<span class="left">' + label + '<span>已作答 <span class="count">' + progress.count + '</span>／' + progress.eligible + '</span></span>' + btn;
+      // 舉手作答：手機送不出去的人舉手，小幫手替他登記
+      var hand = view.state.manual && (ph === 'open' || ph === 'show')
+        ? '<span class="hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>手機送不出去，舉手比 1、2、3</span>'
+        : '';
+      status = '<span class="left">' + label + '<span>已作答 <span class="count">' + progress.count + '</span>／' + progress.eligible + '</span>' + hand + '</span>' + btn;
     }
     return '<div class="round-head"><div class="who"><span class="no">' + String(s.round + 1).padStart(2, '0') + '<small>／' + view.rounds.length + '</small></span>' +
       '<h1>' + esc(e.name) + '</h1></div><span class="pill find">這一輪：找出<b class="tf ' + (e.target === '真' ? 't' : 'f') + '">' + e.target + '</b><span class="tail">的那一件</span></span></div>' +
@@ -516,7 +522,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
           view.state.phase = 'revealed';
           if (view.state.revealed.indexOf(view.state.round) < 0) view.state.revealed.push(view.state.round);
           push(view.state);
-          TT.admin('reveal').then(function (res) { view.state = res.state; }).catch(function (e) { toast('揭曉同步失敗：' + e.message); });
+          // 揭曉時再讀一次作答，停止作答後才補登的答案也算進來
+          TT.admin('reveal', { data: true }).then(function (res) { apply(res); if (slides[cur].id === s.id) render(); }).catch(function (e) { toast('揭曉同步失敗：' + e.message); });
         });
       } else render();
       return;
@@ -574,9 +581,24 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       return load().then(enter);
     }).catch(function (e) { toast('重測失敗：' + e.message); });
   }
+  // 舉手作答開關：畫面和大家手機先變，後端在背景記下
+  function toggleManual() {
+    if (!view) return;
+    var on = !view.state.manual;
+    view.state.manual = on;
+    push(view.state);
+    render();
+    pending = pending.then(function () {
+      return TT.admin('manual', { on: on }).then(function (res) {
+        view.state.manual = res.state.manual;
+        toast(on ? '已改成舉手作答' : '已恢復只用手機作答');
+        render();
+      }, function (e) { view.state.manual = !on; push(view.state); toast('切換失敗：' + e.message); render(); });
+    });
+  }
   function shuffle() {
     if (slides[cur].type !== 'order') { toast('請在出場順序頁抽'); return; }
-    if (view.state.order.length && !confirm('重新抽順序會清掉目前的回合進度，確定嗎？')) return;
+    if (view.state.order.length && !confirm('重新抽順序會清掉目前的回合進度與所有作答，確定嗎？')) return;
     TT.admin('shuffle').then(load).then(render).catch(function (e) { toast('抽順序失敗：' + e.message); });
   }
   function full() {
@@ -595,6 +617,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     else if (k === 'x' || k === 'X') resetRound();
     else if (k === 'f' || k === 'F') full();
     else if (k === 'd' || k === 'D') togglePanel();
+    else if (k === 'm' || k === 'M') toggleManual();
   });
   document.getElementById('hostbar').addEventListener('click', function (ev) {
     var b = ev.target.closest('button');
@@ -614,7 +637,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   /* 主持人控制台：從哪一題開始、清掉演練進度 */
   var ctl = document.getElementById('ctl');
   var ctlNote = '';
-  var JUMPS = [['cover', '封面'], ['rules', '規則'], ['join', '掃碼加入'], ['newbie', '新人介紹'], ['order', '出場順序'], ['final', '最終排行'], ['awards', '三大獎'], ['end', '結尾']];
+  var HELPER_URL = TT.config.playUrl.replace(/play\.html$/, 'host/helper.html');
+  var JUMPS = [['cover', '封面'], ['newbie', '新人介紹'], ['rules', '規則'], ['join', '掃碼加入'], ['order', '出場順序'], ['final', '最終排行'], ['awards', '三大獎'], ['end', '結尾']];
 
   function jumpTo(id) {
     var i = slides.findIndex(function (x) { return x.id === id; });
@@ -645,11 +669,13 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
         '<button type="button" class="ctl-x" data-ctl="close" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>' +
       '<div class="ctl-body">' +
         (ctlNote ? '<div class="ctl-note">' + ctlNote + '</div>' : '') +
+        (st.manual ? '<div class="ctl-note">現在是舉手作答：手機照常能答，送不出去的人舉手，由小幫手用手機打開 ' + esc(HELPER_URL.replace('https://', '')) + ' 替他登記。</div>' : '') +
         '<div><h3>跳到</h3><div class="ctl-jumps">' + jumps + '</div></div>' +
         (rows ? '<div><h3>從哪一位主角開始</h3><div class="ctl-rounds">' + rows + '</div></div>' : '<p class="ctl-note">還沒抽出場順序，先跳到「出場順序」按 S。</p>') +
         '<div><h3>其他</h3><div class="ctl-acts">' +
           '<button type="button" class="act" data-ctl="reload">重新讀取</button>' +
           '<button type="button" class="act" data-ctl="full">全螢幕</button>' +
+          '<button type="button" class="act" data-ctl="manual" style="grid-column:1 / -1">' + (st.manual ? '恢復只用手機作答' : '改成舉手作答（手機送不出去時）') + '</button>' +
           '<button type="button" class="act warn" data-ctl="clear">清掉所有進度，從頭開始</button>' +
           (TT.online ? '<button type="button" class="act" data-ctl="logout" style="grid-column:1 / -1">登出這台電腦</button>' : '') +
         '</div></div>' +
@@ -680,6 +706,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     else if (act === 'full') full();
     else if (act === 'logout') { if (confirm('登出後要重新輸入主持人密碼。確定嗎？')) TT.logout(); }
     else if (act === 'reload') load().then(enter);
+    else if (act === 'manual') toggleManual();
     else if (act === 'clear') {
       if (!confirm('會清掉所有人的作答與揭曉紀錄，出場順序保留。確定嗎？')) return;
       TT.admin('clear_answers').then(load).then(function () { ctlNote = ''; toast('已清掉所有進度'); jumpTo('cover'); })

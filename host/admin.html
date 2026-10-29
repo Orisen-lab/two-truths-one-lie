@@ -36,6 +36,8 @@ button {
   font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
   border-radius: 999px; padding: 8px 16px; border: 1.5px solid #3A3833; background: transparent; color: var(--paper);
 }
+a.link { font-weight: 700; font-size: 14px; color: var(--ink); border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 16px; text-decoration: none; }
+.hand { background: var(--mustard); color: var(--ink); border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: 14px; }
 button.main { background: var(--mustard); border-color: var(--mustard); color: var(--ink); }
 button.warn { color: #E58A7D; border-color: #6A3A33; }
 button:disabled { opacity: .4; cursor: default; }
@@ -69,7 +71,10 @@ tr.cur td { background: var(--mustard-soft); }
 <main class="wrap">
   <div class="head">
     <div><h1>主持人後台</h1><p>每 5 秒自動更新。這一頁只給主持人用，網址和密碼不要傳給別人。</p></div>
-    <button type="button" id="csv" style="color:var(--ink);border-color:var(--line)">下載成績表</button>
+    <div class="btns">
+      <a href="helper.html" target="_blank" rel="noopener" class="link">小幫手登記頁</a>
+      <button type="button" id="csv" style="color:var(--ink);border-color:var(--line)">下載成績表</button>
+    </div>
   </div>
 
   <section class="bar">
@@ -83,6 +88,7 @@ tr.cur td { background: var(--mustard-soft); }
       <button type="button" data-op="reset_round">重測這一輪</button>
       <button type="button" data-op="shuffle">抽出場順序</button>
       <button type="button" data-op="append_missing" id="append">把晚報名的人加到最後</button>
+      <button type="button" data-op="manual" id="manual">改成舉手作答</button>
       <button type="button" class="warn" data-op="clear_answers">清除所有作答紀錄</button>
     </div>
     <p class="msg" id="msg"></p>
@@ -117,7 +123,7 @@ tr.cur td { background: var(--mustard-soft); }
   </section>
 </main>
 
-<script src="host.js?v=20261029134057"></script>
+<script src="host.js?v=20261029151923"></script>
 <script>
 (function () {
   var view = null;
@@ -137,6 +143,7 @@ tr.cur td { background: var(--mustard-soft); }
     $('now').innerHTML = r
       ? '<span class="num">' + (st.round + 1) + '／' + st.order.length + '</span><b>' + esc(r.name) + '</b>' +
         '<span class="phase">' + PHASE[st.phase] + '</span>' +
+        (st.manual ? '<span class="hand">舉手作答中</span>' : '') +
         '<span>已作答 ' + r.answered + '／' + Math.max(0, view.players.length - 1) + '</span>' +
         (r.entry ? '<span>找' + r.entry.target + '的，答案第 ' + (r.entry.answer + 1) + ' 件</span>' : '')
       : '<span class="phase">' + PHASE[st.phase] + '</span><span>' + (st.order.length ? '共 ' + st.order.length + ' 位主角，尚未進入第一輪' : '還沒抽出場順序') + '</span>';
@@ -176,15 +183,17 @@ tr.cur td { background: var(--mustard-soft); }
     }).join('') || '<span>還沒抽出場順序</span>';
     $('missing').textContent = view.missing.length ? '還沒排進順序的人：' + view.missing.join('、') : '';
     $('append').disabled = !view.missing.length || !st.order.length;
+    $('manual').textContent = st.manual ? '恢復只用手機作答' : '改成舉手作答';
   }
 
   function act(op) {
     if (busy || !view) return;
     var st = view.state;
     var extra = {};
-    if (op === 'shuffle' && st.order.length && !confirm('重新抽順序會清掉目前的回合進度，確定嗎？')) return;
+    if (op === 'shuffle' && st.order.length && !confirm('重新抽順序會清掉目前的回合進度與所有作答，確定嗎？')) return;
     if (op === 'reset_round' && !confirm('會清掉這一輪所有人的作答，並重新開放作答。確定嗎？')) return;
     if (op === 'clear_answers' && !confirm('會刪掉所有作答紀錄、回到還沒開始的狀態。演練完、正式開始前才按。確定嗎？')) return;
+    if (op === 'manual') extra.on = !st.manual;
     if (op === 'prev' || op === 'next') {
       var r = st.round + (op === 'next' ? 1 : -1);
       if (r < -1 || r >= st.order.length) return;

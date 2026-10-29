@@ -13,9 +13,11 @@ window.TT = (function () {
   var entriesCache = null;
   var lastPushed = '';
   var seqN = 0;
+  // 中繼只收這個版本以上推的內容：舊分頁沒關的話，推上去的舊畫面會被擋掉
+  var RELAY_V = 2;
   function publish(st, at) {
     if (!st || !entriesCache || !CONFIG.key) return;
-    var pub = { ok: true, phase: st.phase, round: st.round + 1, total: st.order.length, epoch: st.epoch || 0 };
+    var pub = { ok: true, phase: st.phase, round: st.round + 1, total: st.order.length, epoch: st.epoch || 0, manual: !!st.manual };
     if (st.round >= 0) {
       var k = key(st.order[st.round]);
       var e = entriesCache.filter(function (x) { return key(x.name) === k; })[0];
@@ -29,7 +31,7 @@ window.TT = (function () {
     var text = JSON.stringify(pub);
     if (text === lastPushed) return;
     lastPushed = text;
-    fetch(CONFIG.relay, { method: 'POST', body: JSON.stringify({ key: CONFIG.key, seq: (at || Date.now()) * 1000 + (seqN++ % 1000), state: pub }) })
+    fetch(CONFIG.relay, { method: 'POST', body: JSON.stringify({ v: RELAY_V, key: CONFIG.key, seq: (at || Date.now()) * 1000 + (seqN++ % 1000), state: pub }) })
       .catch(function () { lastPushed = ''; });
   }
 
@@ -42,6 +44,7 @@ window.TT = (function () {
     server_error: '後端忙不過來，請再按一次'
   };
 
+  var READ_ONLY = ['data', 'progress', 'proxy'];
   function admin(op, extra) {
     var sentAt = Date.now();
     var body = { a: 'admin', key: CONFIG.key, op: op };
@@ -51,7 +54,8 @@ window.TT = (function () {
       .then(function (res) {
         if (!res || !res.ok) throw new Error(ERRORS[res && res.error] || '沒有成功，請再按一次');
         if (res.entries) entriesCache = res.entries;
-        if (res.state) publish(res.state, sentAt);
+        // 只有改變進度的操作才推；單純讀資料的回應可能比剛推上去的畫面舊，推了會讓手機跳回去
+        if (res.state && READ_ONLY.indexOf(op) < 0) publish(res.state, sentAt);
         return res;
       }, function (err) {
         if (err && /fetch|network|load/i.test(err.message)) throw new Error('連不上網路，請確認連線後再試一次');
