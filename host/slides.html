@@ -37,6 +37,12 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   padding: 14px 34px; font-size: 40px; font-weight: 900;
 }
 .pill.ghost { background: transparent; color: var(--fg); border: 3px solid var(--fg); }
+/* 這一輪要找真或假：那個字放大、深底配真假色 */
+.pill.find { padding: 10px 14px 10px 34px; gap: 12px; white-space: nowrap; }
+.pill.find .tf { display: inline-grid; place-items: center; min-width: 104px; height: 84px; padding: 0 20px; border-radius: 999px; background: #151515; font-size: 64px; line-height: 1; }
+.pill.find .tf.t { color: var(--ok); }
+.pill.find .tf.f { color: var(--bad); }
+.pill.find .tail { padding-right: 20px; }
 
 /* 封面 */
 .cover { justify-content: center; gap: 48px; }
@@ -104,7 +110,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 .thing.hit { border-color: var(--mustard); background: var(--mustard-soft); }
 .thing.dim { opacity: .4; }
 .status { display: flex; justify-content: space-between; align-items: center; gap: 30px; height: 96px; flex: none; overflow: hidden; }
-.status .left { display: flex; gap: 30px; align-items: center; font-size: 40px; color: var(--muted); font-weight: 700; }
+.status .left { display: flex; gap: 30px; align-items: baseline; font-size: 40px; color: var(--muted); font-weight: 700; }
 .status .count { font-family: var(--font-num); font-size: 72px; color: var(--fg); }
 .status .stop { font: inherit; font-size: 40px; font-weight: 900; background: var(--mustard); color: #121212; border: 0; border-radius: 999px; padding: 16px 52px; cursor: pointer; white-space: nowrap; }
 .status .stop.again { font-size: 30px; font-weight: 700; background: transparent; color: var(--muted); box-shadow: inset 0 0 0 2px var(--line); padding: 14px 36px; }
@@ -212,6 +218,10 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   var lastData = null;
   var prefetch = Promise.resolve();
   var aReady = false;
+  var pending = Promise.resolve();
+  var syncing = null;
+  var opSeq = 0;
+  var closedWith = -2;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function toast(t) { toastEl.textContent = t; toastEl.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { toastEl.classList.remove('show'); }, 2200); }
@@ -245,12 +255,20 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     cur = keep >= 0 ? keep : Math.min(cur, slides.length - 1);
   }
 
+  function apply(data) {
+    lastData = data;
+    view = TT.compute(data);
+    build();
+  }
   function load() {
-    return TT.admin('data').then(function (data) {
-      lastData = data;
-      view = TT.compute(data);
-      build();
-    }).catch(function (e) { toast('讀取資料失敗：' + e.message); });
+    return TT.admin('data').then(apply).catch(function (e) { toast('讀取資料失敗：' + e.message); });
+  }
+  // 操作與讀資料一次來回：後端在同一個回應裡帶回最新名單與作答
+  function sync(op, extra) {
+    opSeq++;
+    var body = { data: true };
+    for (var k in (extra || {})) body[k] = extra[k];
+    return TT.admin(op, body).then(function (res) { opSeq++; apply(res); });
   }
 
   /* 畫面 */
@@ -360,7 +378,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       status = '<span class="left">' + label + '<span>已作答 <span class="count">' + progress.count + '</span>／' + progress.eligible + '</span></span>' + btn;
     }
     return '<div class="round-head"><div class="who"><span class="no">' + String(s.round + 1).padStart(2, '0') + '<small>／' + view.rounds.length + '</small></span>' +
-      '<h1>' + esc(e.name) + '</h1></div><span class="pill">這一輪：找出' + e.target + '的那一件</span></div>' +
+      '<h1>' + esc(e.name) + '</h1></div><span class="pill find">這一輪：找出<b class="tf ' + (e.target === '真' ? 't' : 'f') + '">' + e.target + '</b><span class="tail">的那一件</span></span></div>' +
       '<div class="things">' + things + '</div><div class="status">' + status + '</div>';
   }
 
@@ -401,32 +419,47 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     stopPoll();
     var s = slides[cur];
     var st = view && view.state;
-    var p = Promise.resolve();
+    var p = pending;
+    var synced = false;
     if ((s.type === 'q' || s.type === 'a') && st && st.round !== s.round) {
-      p = TT.admin('goto', { round: s.round }).then(load);
+      p = p.then(function () { return sync('goto', { round: s.round }); });
+      synced = true;
     }
     // 開場幾頁：大家手機回到「等主持人開始」，不會停在上次演練的主角
     if (['cover', 'rules', 'join', 'newbie', 'order'].indexOf(s.type) >= 0 && st && st.round >= 0) {
-      p = TT.admin('goto', { round: -1 }).then(load);
+      p = p.then(function () { return sync('goto', { round: -1 }); });
+      synced = true;
+    }
+    if (s.type === 'q' && synced) {
+      // 先把畫面切成這一輪、作答中，不用等後端回來
+      view.state.round = s.round;
+      view.state.phase = view.state.revealed.indexOf(s.round) >= 0 ? 'revealed' : 'open';
+      syncing = p;
+      p.then(function () { if (syncing === p) syncing = null; }, function () { if (syncing === p) syncing = null; });
     }
     if (s.type === 'sum') {
       render();
-      p.then(load).catch(function () {}).then(function () { if (slides[cur] === s) render(); });
+      (synced ? p : p.then(load)).catch(function () {}).then(function () { if (slides[cur].id === s.id) render(); });
       return;
     }
-    if (s.type === 'q') progress = { count: view.rounds[s.round].answered, eligible: Math.max(0, view.players.length - 1) };
+    if (s.type === 'q') {
+      progress = { count: view.rounds[s.round].answered, eligible: Math.max(0, view.players.length - 1) };
+      render();
+    }
     if (s.type === 'a') {
       aReady = false;
       render();
       prefetch = p.then(function () {
-        return (view.state.phase === 'open' ? TT.admin('close') : Promise.resolve()).then(load);
+        if (view.state.phase === 'open') return sync('close');
+        // 停止作答時已經帶回最新作答，不用再讀一次
+        return closedWith === s.round ? null : load();
       }).catch(function (e) { toast('同步失敗：' + e.message); });
-      prefetch.then(function () { aReady = true; if (slides[cur] === s) render(); });
+      prefetch.then(function () { aReady = true; if (slides[cur].id === s.id) render(); });
       return;
     }
     if (s.type === 'board' || s.type === 'awards') {
       render();
-      p.then(load).catch(function (e) { toast('同步失敗：' + e.message); }).then(function () { if (slides[cur] === s) render(); });
+      (synced ? p : p.then(load)).catch(function (e) { toast('同步失敗：' + e.message); }).then(function () { if (slides[cur].id === s.id) render(); });
       return;
     }
     p.catch(function (e) { toast('同步失敗：' + e.message); }).then(function () {
@@ -437,9 +470,11 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 
   function startPoll() {
     var tickFn = function () {
+      var mark = opSeq;
       TT.admin('progress').then(function (res) {
         progress = { count: res.count, eligible: res.eligible };
-        view.state = res.state;
+        // 讀取期間主持人有操作過，就不拿這次的舊狀態蓋掉畫面
+        if (mark === opSeq && !syncing) view.state = res.state;
         if (slides[cur].type === 'q') render();
       }).catch(function () {});
     };
@@ -452,9 +487,14 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   function next() {
     var s = slides[cur];
     // 題目頁：還在作答中不往下翻，要先按畫面上的「停止作答」
-    if (s.type === 'q' && view && view.state.round === s.round && view.state.phase === 'open') {
-      toast('還在作答中，先按畫面上的「停止作答」');
-      return;
+    // 換題後還沒跟後端對上之前也一律擋住，避免按太快直接跳過停止作答
+    if (s.type === 'q' && view) {
+      if (syncing) { toast('正在同步這一輪，請稍等一下'); return; }
+      var stq = view.state;
+      if (stq.round !== s.round || stq.phase === 'open' || stq.phase === 'show') {
+        toast('還在作答中，先按畫面上的「停止作答」');
+        return;
+      }
     }
     if (s.steps && step < s.steps) {
       step++;
@@ -477,26 +517,38 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       enter();
     }
   }
+  // 開放／停止作答：畫面先變，後端在背景同步；失敗就改回來
   function openRound() {
     var s = slides[cur];
     if (s.type !== 'q') { toast('請在題目頁開放作答'); return; }
     if (view.state.round === s.round && view.state.phase === 'open') return;
-    TT.admin('open').then(function (res) {
-      view.state = res.state;
-      toast('已重新開放作答');
-      render();
-    }).catch(function (e) { toast('開放失敗：' + e.message); render(); });
+    var before = view.state.phase;
+    closedWith = -2;
+    opSeq++;
+    view.state.phase = 'open';
+    render();
+    pending = pending.then(function () {
+      return TT.admin('open').then(function (res) { opSeq++; view.state = res.state; toast('已重新開放作答'); render(); },
+        function (e) { view.state.phase = before; toast('開放失敗：' + e.message); render(); });
+    });
   }
   function closeRound() {
     if (slides[cur].type !== 'q') return;
-    TT.admin('close').then(function (res) { view.state = res.state; render(); })
-      .catch(function (e) { toast('停止作答失敗：' + e.message); render(); });
+    var s0 = slides[cur].round;
+    opSeq++;
+    view.state.phase = 'closed';
+    render();
+    pending = pending.then(function () {
+      return TT.admin('close', { data: true }).then(function (res) { opSeq++; apply(res); closedWith = s0; render(); },
+        function (e) { view.state.phase = 'open'; toast('停止作答失敗：' + e.message); render(); });
+    });
   }
   // 演練用：清掉這一輪所有人的作答，回到題目頁重新開放
   function resetRound() {
     var s = slides[cur];
     if (s.round == null || s.round !== view.state.round) { toast('請在這一輪的題目、揭曉或總覽頁按'); return; }
     if (!confirm('會清掉這一輪所有人的作答，大家手機回到可以重選。確定嗎？')) return;
+    closedWith = -2;
     TT.admin('reset_round').then(function (res) {
       view.state = res.state;
       for (var i = 0; i < slides.length; i++) if (slides[i].type === 'q' && slides[i].round === s.round) { cur = i; break; }
