@@ -204,7 +204,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 <div class="toast" id="toast"></div>
 <aside class="ctl" id="ctl" hidden aria-label="主持人控制台"></aside>
 
-<script src="host.js"></script>
+<script src="host.js?v=20261029134057"></script>
 <script>
 (function () {
   var stage = document.getElementById('stage');
@@ -221,6 +221,10 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   var pending = Promise.resolve();
   var syncing = null;
   var opSeq = 0;
+  // 推進度到中繼；舊版共用腳本沒有這個功能時直接略過，不影響翻頁
+  function push(st) {
+    try { if (TT.publish) TT.publish(st); } catch (e) {}
+  }
   var closedWith = -2;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -431,13 +435,13 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       synced = true;
       view.state.round = -1;
       view.state.phase = 'idle';
-      TT.publish(view.state);
+      push(view.state);
     }
     if (s.type === 'q' && synced) {
       // 先把畫面切成這一輪、作答中，不用等後端回來
       view.state.round = s.round;
       view.state.phase = view.state.revealed.indexOf(s.round) >= 0 ? 'revealed' : 'open';
-      TT.publish(view.state);
+      push(view.state);
       syncing = p;
       p.then(function () { if (syncing === p) syncing = null; }, function () { if (syncing === p) syncing = null; });
     }
@@ -447,7 +451,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       return;
     }
     if (s.type === 'q') {
-      progress = { count: view.rounds[s.round].answered, eligible: Math.max(0, view.players.length - 1) };
+      var rq = view.rounds[s.round];
+      progress = { count: rq ? rq.answered : 0, eligible: Math.max(0, view.players.length - 1) };
       render();
     }
     if (s.type === 'a') {
@@ -495,7 +500,9 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     if (s.type === 'q' && view) {
       if (syncing) { toast('正在同步這一輪，請稍等一下'); return; }
       var stq = view.state;
-      if (stq.round !== s.round || stq.phase === 'open' || stq.phase === 'show') {
+      // 畫面和後端對不上同一輪（例如上一步出錯）：重新同步這一輪，不讓主持人卡住
+      if (stq.round !== s.round) { toast('正在同步這一輪，請稍等一下'); enter(); return; }
+      if (stq.phase === 'open' || stq.phase === 'show') {
         toast('還在作答中，先按畫面上的「停止作答」');
         return;
       }
@@ -508,7 +515,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
           // 大家手機先亮答案，後端在背景記下揭曉
           view.state.phase = 'revealed';
           if (view.state.revealed.indexOf(view.state.round) < 0) view.state.revealed.push(view.state.round);
-          TT.publish(view.state);
+          push(view.state);
           TT.admin('reveal').then(function (res) { view.state = res.state; }).catch(function (e) { toast('揭曉同步失敗：' + e.message); });
         });
       } else render();
@@ -534,11 +541,11 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     closedWith = -2;
     opSeq++;
     view.state.phase = 'open';
-    TT.publish(view.state);
+    push(view.state);
     render();
     pending = pending.then(function () {
       return TT.admin('open').then(function (res) { opSeq++; view.state = res.state; toast('已重新開放作答'); render(); },
-        function (e) { view.state.phase = before; TT.publish(view.state); toast('開放失敗：' + e.message); render(); });
+        function (e) { view.state.phase = before; push(view.state); toast('開放失敗：' + e.message); render(); });
     });
   }
   function closeRound() {
@@ -546,11 +553,11 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     var s0 = slides[cur].round;
     opSeq++;
     view.state.phase = 'closed';
-    TT.publish(view.state);
+    push(view.state);
     render();
     pending = pending.then(function () {
       return TT.admin('close', { data: true }).then(function (res) { opSeq++; apply(res); closedWith = s0; render(); },
-        function (e) { view.state.phase = 'open'; TT.publish(view.state); toast('停止作答失敗：' + e.message); render(); });
+        function (e) { view.state.phase = 'open'; push(view.state); toast('停止作答失敗：' + e.message); render(); });
     });
   }
   // 演練用：清掉這一輪所有人的作答，回到題目頁重新開放
