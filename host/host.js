@@ -3,8 +3,35 @@ window.TT = (function () {
   var CONFIG = {
     endpoint: 'https://script.google.com/macros/s/AKfycbwE8ss60BNEJQL7Ahfd8xZuYJbYF-5VkZpKD0DgzsqunaWLakGvaHsSezNazEka1U5yKg/exec',
     key: '',
-    playUrl: 'https://orisen-lab.github.io/two-truths-one-lie/play.html'
+    playUrl: 'https://orisen-lab.github.io/two-truths-one-lie/play.html',
+    relay: 'https://tt1f-relay.tinyck-863.workers.dev/state'
   };
+
+  /* 進度中繼：每次狀態有變就把「手機該看到的畫面」推上去，手機讀這份比讀 Google 快很多。
+     seq 用「這份狀態是什麼時候的」：操作當下推的用現在時間，後端回應用送出請求的時間，
+     晚到的舊回應不會蓋掉剛剛推的新狀態。 */
+  var entriesCache = null;
+  var lastPushed = '';
+  var seqN = 0;
+  function publish(st, at) {
+    if (!st || !entriesCache || !CONFIG.key) return;
+    var pub = { ok: true, phase: st.phase, round: st.round + 1, total: st.order.length, epoch: st.epoch || 0 };
+    if (st.round >= 0) {
+      var k = key(st.order[st.round]);
+      var e = entriesCache.filter(function (x) { return key(x.name) === k; })[0];
+      if (e) {
+        pub.protagonist = e.name;
+        pub.things = e.things;
+        pub.target = e.target;
+        if (st.phase === 'revealed') { pub.truths = e.truths; pub.answer = e.answer + 1; }
+      }
+    }
+    var text = JSON.stringify(pub);
+    if (text === lastPushed) return;
+    lastPushed = text;
+    fetch(CONFIG.relay, { method: 'POST', body: JSON.stringify({ key: CONFIG.key, seq: (at || Date.now()) * 1000 + (seqN++ % 1000), state: pub }) })
+      .catch(function () { lastPushed = ''; });
+  }
 
   // 後端錯誤碼轉成主持人看得懂的話
   var ERRORS = {
@@ -16,12 +43,15 @@ window.TT = (function () {
   };
 
   function admin(op, extra) {
+    var sentAt = Date.now();
     var body = { a: 'admin', key: CONFIG.key, op: op };
     for (var k in (extra || {})) body[k] = extra[k];
     return fetch(CONFIG.endpoint, { method: 'POST', body: JSON.stringify(body) })
       .then(function (r) { return r.json(); })
       .then(function (res) {
         if (!res || !res.ok) throw new Error(ERRORS[res && res.error] || '沒有成功，請再按一次');
+        if (res.entries) entriesCache = res.entries;
+        if (res.state) publish(res.state, sentAt);
         return res;
       }, function (err) {
         if (err && /fetch|network|load/i.test(err.message)) throw new Error('連不上網路，請確認連線後再試一次');
@@ -137,5 +167,5 @@ window.TT = (function () {
     return { state: st, rounds: rounds, players: players, ranked: ranked, awards: awards, missing: missing, revealedCount: revealedRounds.length };
   }
 
-  return { config: CONFIG, admin: admin, compute: compute, key: key, ready: ready, logout: logout, online: online };
+  return { config: CONFIG, admin: admin, compute: compute, key: key, ready: ready, logout: logout, online: online, publish: publish };
 })();

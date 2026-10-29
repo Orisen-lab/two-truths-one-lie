@@ -429,11 +429,15 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     if (['cover', 'rules', 'join', 'newbie', 'order'].indexOf(s.type) >= 0 && st && st.round >= 0) {
       p = p.then(function () { return sync('goto', { round: -1 }); });
       synced = true;
+      view.state.round = -1;
+      view.state.phase = 'idle';
+      TT.publish(view.state);
     }
     if (s.type === 'q' && synced) {
       // 先把畫面切成這一輪、作答中，不用等後端回來
       view.state.round = s.round;
       view.state.phase = view.state.revealed.indexOf(s.round) >= 0 ? 'revealed' : 'open';
+      TT.publish(view.state);
       syncing = p;
       p.then(function () { if (syncing === p) syncing = null; }, function () { if (syncing === p) syncing = null; });
     }
@@ -501,6 +505,10 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       if (s.type === 'a' && step === 4) {
         prefetch.then(function () {
           render();
+          // 大家手機先亮答案，後端在背景記下揭曉
+          view.state.phase = 'revealed';
+          if (view.state.revealed.indexOf(view.state.round) < 0) view.state.revealed.push(view.state.round);
+          TT.publish(view.state);
           TT.admin('reveal').then(function (res) { view.state = res.state; }).catch(function (e) { toast('揭曉同步失敗：' + e.message); });
         });
       } else render();
@@ -526,10 +534,11 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     closedWith = -2;
     opSeq++;
     view.state.phase = 'open';
+    TT.publish(view.state);
     render();
     pending = pending.then(function () {
       return TT.admin('open').then(function (res) { opSeq++; view.state = res.state; toast('已重新開放作答'); render(); },
-        function (e) { view.state.phase = before; toast('開放失敗：' + e.message); render(); });
+        function (e) { view.state.phase = before; TT.publish(view.state); toast('開放失敗：' + e.message); render(); });
     });
   }
   function closeRound() {
@@ -537,10 +546,11 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     var s0 = slides[cur].round;
     opSeq++;
     view.state.phase = 'closed';
+    TT.publish(view.state);
     render();
     pending = pending.then(function () {
       return TT.admin('close', { data: true }).then(function (res) { opSeq++; apply(res); closedWith = s0; render(); },
-        function (e) { view.state.phase = 'open'; toast('停止作答失敗：' + e.message); render(); });
+        function (e) { view.state.phase = 'open'; TT.publish(view.state); toast('停止作答失敗：' + e.message); render(); });
     });
   }
   // 演練用：清掉這一輪所有人的作答，回到題目頁重新開放
