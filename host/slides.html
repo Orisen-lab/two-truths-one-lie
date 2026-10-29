@@ -130,6 +130,11 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 .sum-col.ok h2 { color: var(--ok); }
 .sum-col:not(.bad):not(.ok) h2 { color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; }
+/* 名單太長時欄內往下捲，不會被切掉 */
+.sum-col .chips { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.sum-col .chips::-webkit-scrollbar { width: 10px; }
+.sum-col .chips::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+.sum-col .chips.more { -webkit-mask-image: linear-gradient(#000 calc(100% - 90px), transparent); mask-image: linear-gradient(#000 calc(100% - 90px), transparent); }
 .chip { font-size: 36px; font-weight: 700; padding: 8px 22px; border-radius: 999px; white-space: nowrap; }
 .chip.b { background: rgba(229, 138, 125, .16); color: var(--fg); }
 .chip.o { background: rgba(143, 191, 122, .16); color: var(--fg); }
@@ -190,6 +195,33 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 .ctl-row button.redo:hover { color: var(--fg); border-color: var(--muted); }
 .ctl-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .ctl button.act.warn { grid-column: 1 / -1; color: var(--bad); border-color: rgba(229, 138, 125, .4); }
+
+/* 右下角翻頁：停止作答前是次要樣式，停止後變主要 */
+.status .right { display: flex; align-items: center; gap: 20px; flex: none; }
+.status .nx { font: inherit; display: inline-flex; align-items: center; gap: 12px; font-size: 40px; font-weight: 900; background: var(--mustard); color: #121212; border: 0; border-radius: 999px; padding: 16px 40px 16px 52px; cursor: pointer; white-space: nowrap; }
+.status .nx svg { width: 40px; height: 40px; }
+.status .nx.soft { font-size: 30px; font-weight: 700; background: transparent; color: var(--muted); box-shadow: inset 0 0 0 2px var(--line); padding: 14px 28px 14px 36px; }
+.status .nx.soft svg { width: 30px; height: 30px; }
+.sum .status { justify-content: flex-end; }
+
+/* 作答名單：右側滑出，不跟著舞台縮放 */
+.rbtn { position: fixed; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; background: #1A1917; color: var(--muted); border: 1px solid var(--line); border-right: 0; border-radius: 14px 0 0 14px; cursor: pointer; z-index: 19; font: inherit; font-size: 13px; font-weight: 700; opacity: .45; transition: opacity .2s; }
+.rbtn:hover, .rbtn.on { opacity: 1; color: var(--fg); }
+.rbtn svg { width: 22px; height: 22px; }
+.rbtn .c { font-family: var(--font-num); font-size: 16px; font-weight: 400; color: var(--mustard); }
+.roster { position: fixed; top: 20px; right: 20px; bottom: 20px; width: 400px; display: flex; flex-direction: column; background: #1A1917; color: var(--fg); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); z-index: 21; overflow: hidden; transform: translateX(calc(100% + 40px)); transition: transform .25s ease; visibility: hidden; }
+.roster.open { transform: none; visibility: visible; }
+.roster .ctl-head p { font-size: 14px; }
+.roster-body { overflow-y: auto; padding: 0 16px 20px; display: flex; flex-direction: column; gap: 20px; }
+.roster h3 { display: flex; align-items: baseline; gap: 8px; font-size: 15px; font-weight: 700; color: var(--muted); margin: 0 0 10px; }
+.roster h3 b { font-family: var(--font-num); font-weight: 400; font-size: 26px; color: var(--fg); }
+.roster h3.wait b { color: var(--mustard); }
+.roster-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.roster-list span { font-size: 18px; font-weight: 700; padding: 6px 14px; border-radius: 999px; white-space: nowrap; }
+.roster-list .w { background: var(--mustard-soft); color: var(--fg); }
+.roster-list .d { color: var(--muted); border: 1px solid var(--line); }
+.roster-list .d small { font-size: 12px; color: var(--mustard); margin-left: 6px; }
+.roster .none { font-size: 15px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -201,12 +233,15 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   <button type="button" data-k="open">開放作答 O</button>
   <button type="button" data-k="reload">重新讀取 R</button>
   <button type="button" data-k="reset">重測這一輪 X</button>
+  <button type="button" data-k="roster">作答名單 L</button>
   <button type="button" data-k="full">全螢幕 F</button>
 </div>
 <div class="toast" id="toast"></div>
 <aside class="ctl" id="ctl" hidden aria-label="主持人控制台"></aside>
+<button type="button" class="rbtn" id="rbtn" aria-label="作答名單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>名單<span class="c" id="rcount"></span></button>
+<aside class="roster" id="roster" aria-label="作答名單"></aside>
 
-<script src="host.js?v=20261029151923"></script>
+<script src="host.js?v=20261029172929"></script>
 <script>
 (function () {
   var stage = document.getElementById('stage');
@@ -228,6 +263,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     try { if (TT.publish) TT.publish(st); } catch (e) {}
   }
   var closedWith = -2;
+  var rosterData = null;
+  var rGen = 0;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function toast(t) { toastEl.textContent = t; toastEl.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { toastEl.classList.remove('show'); }, 2200); }
@@ -263,6 +300,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 
   function apply(data) {
     lastData = data;
+    rosterData = data;
+    rGen++;
     view = TT.compute(data);
     build();
   }
@@ -350,6 +389,8 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     }
     stage.innerHTML = html;
     renderPanel();
+    renderRoster();
+    if (s.type === 'sum') markMore();
     if (s.type === 'join') drawQr();
   }
 
@@ -374,6 +415,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       status = step >= 4
         ? '<span class="result-line">答對<span class="num">' + r.correct + '</span>人　被騙<span class="num">' + r.fooled + '</span>人</span>'
         : '<span class="left">' + (step === 0 ? '已停止作答' + (aReady ? '<span>已作答 <span class="count">' + r.answered + '</span>／' + Math.max(0, view.players.length - 1) + '</span>' : '<span>統計中…</span>') : '揭曉中…') + '</span>';
+      status += '<span class="right">' + nextBtn(false) + '</span>';
     } else {
       var ph = view.state.round === s.round ? view.state.phase : 'show';
       var label = { show: '作答中', open: '作答中', closed: '已停止作答', revealed: '已揭曉', idle: '作答中' }[ph];
@@ -385,11 +427,32 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       var hand = view.state.manual && (ph === 'open' || ph === 'show')
         ? '<span class="hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>手機送不出去，舉手比 1、2、3</span>'
         : '';
-      status = '<span class="left">' + label + '<span>已作答 <span class="count">' + progress.count + '</span>／' + progress.eligible + '</span>' + hand + '</span>' + btn;
+      // 還在作答中時翻頁鈕是次要樣式，按了會提醒先停止作答
+      status = '<span class="left">' + label + '<span>已作答 <span class="count">' + progress.count + '</span>／' + progress.eligible + '</span>' + hand + '</span>' +
+        '<span class="right">' + btn + nextBtn(ph === 'open' || ph === 'show') + '</span>';
     }
     return '<div class="round-head"><div class="who"><span class="no">' + String(s.round + 1).padStart(2, '0') + '<small>／' + view.rounds.length + '</small></span>' +
       '<h1>' + esc(e.name) + '</h1></div><span class="pill find">這一輪：找出<b class="tf ' + (e.target === '真' ? 't' : 'f') + '">' + e.target + '</b><span class="tail">的那一件</span></span></div>' +
       '<div class="things">' + things + '</div><div class="status">' + status + '</div>';
+  }
+
+  // 名單欄下面還有人時底部淡出，捲到底就拿掉
+  function markMore(el) {
+    (el ? [el] : stage.querySelectorAll('.sum-col .chips')).forEach(function (c) {
+      c.classList.toggle('more', c.scrollTop + c.clientHeight < c.scrollHeight - 4);
+    });
+  }
+  stage.addEventListener('scroll', function (ev) {
+    if (ev.target.classList && ev.target.classList.contains('chips')) markMore(ev.target);
+  }, true);
+
+  // 右下角翻頁鈕：揭曉頁逐件翻是「下一步」，下一頁是新主角時是「下一輪」
+  function nextBtn(soft) {
+    var s = slides[cur];
+    var nx = slides[cur + 1];
+    var label = s.steps && step < s.steps ? '下一步' : (nx && nx.type === 'q' ? '下一輪' : '下一頁');
+    return '<button type="button" class="nx' + (soft ? ' soft' : '') + '" data-act="next">' + label +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>';
   }
 
   function sumHtml(s) {
@@ -415,7 +478,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       '<div class="sum-col bad"><h2>被騙了<span>' + wrong.length + '</span></h2><div class="chips">' + chips(wrong, 'b') + '</div></div>' +
       '<div class="sum-col ok"><h2>答對了<span>' + right.length + '</span></h2><div class="chips">' + chips(right, 'o') + '</div></div>' +
       '<div class="sum-col"><h2>沒作答<span>' + none.length + '</span></h2><div class="chips">' + chips(none, 'n') + '</div></div>' +
-      '</div>';
+      '</div><div class="status"><span class="right">' + nextBtn(false) + '</span></div>';
   }
 
   function drawQr() {
@@ -607,6 +670,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 
   document.addEventListener('keydown', function (ev) {
     var k = ev.key;
+    if (k === 'Escape' && rosterEl.classList.contains('open')) { toggleRoster(false); return; }
     if (k === 'Escape' && !ctl.hidden) { togglePanel(false); return; }
     if ((k === ' ' || k === 'Enter') && ctl.contains(ev.target)) return;
     if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { ev.preventDefault(); next(); }
@@ -618,20 +682,24 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
     else if (k === 'f' || k === 'F') full();
     else if (k === 'd' || k === 'D') togglePanel();
     else if (k === 'm' || k === 'M') toggleManual();
+    else if (k === 'l' || k === 'L') toggleRoster();
   });
   document.getElementById('hostbar').addEventListener('click', function (ev) {
     var b = ev.target.closest('button');
     if (!b) return;
     var k = b.getAttribute('data-k');
-    ({ prev: prev, next: next, open: openRound, reload: function () { load().then(enter); }, reset: resetRound, full: full, panel: function () { togglePanel(); } })[k]();
+    ({ prev: prev, next: next, open: openRound, reload: function () { load().then(enter); }, reset: resetRound, full: full, panel: function () { togglePanel(); }, roster: function () { toggleRoster(); } })[k]();
     b.blur();
   });
 
   stage.addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-act]');
     if (!b) return;
+    var act = b.getAttribute('data-act');
+    b.blur();
+    if (act === 'next') { next(); return; }
     b.disabled = true;
-    if (b.getAttribute('data-act') === 'stop') closeRound(); else openRound();
+    if (act === 'stop') closeRound(); else openRound();
   });
 
   /* 主持人控制台：從哪一題開始、清掉演練進度 */
@@ -683,6 +751,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   }
   function togglePanel(show) {
     ctl.hidden = show === undefined ? !ctl.hidden : !show;
+    if (!ctl.hidden) toggleRoster(false);
     if (ctl.hidden) ctlNote = '';
     renderPanel();
   }
@@ -712,6 +781,89 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
       TT.admin('clear_answers').then(load).then(function () { ctlNote = ''; toast('已清掉所有進度'); jumpTo('cover'); })
         .catch(function (e) { toast('清除失敗：' + e.message); });
     }
+  });
+
+  /* 作答名單：看這一輪誰答了、誰還沒答；不顯示選了哪一件 */
+  var rosterEl = document.getElementById('roster');
+  var rbtn = document.getElementById('rbtn');
+  var rcount = document.getElementById('rcount');
+  var rTimer = null;
+  // 題目、揭曉、總覽頁看那一輪；其他頁看目前進行到的那一輪
+  function rosterRound() {
+    var s = slides[cur];
+    if (s && s.round != null) return s.round;
+    return view && view.state.round >= 0 ? view.state.round : -1;
+  }
+  function rosterLists(ri) {
+    var d = rosterData;
+    var name = view && view.rounds[ri] ? view.rounds[ri].name : (d && d.state.order[ri]);
+    if (!d || !name) return null;
+    var k = TT.key;
+    var got = {};
+    d.answers.forEach(function (a) { if (a.round === ri + 1) got[k(a.voter)] = a; });
+    var done = [], wait = [];
+    d.entries.forEach(function (e) {
+      if (k(e.name) === k(name)) return;
+      var a = got[k(e.name)];
+      if (a) done.push({ name: e.name, helper: a.helper }); else wait.push({ name: e.name });
+    });
+    var by = function (x, y) { return x.name.localeCompare(y.name, 'zh-Hant'); };
+    return { name: name, done: done.sort(by), wait: wait.sort(by) };
+  }
+  function renderRoster() {
+    var ri = rosterRound();
+    var s = slides[cur];
+    var L = ri >= 0 ? rosterLists(ri) : null;
+    if (s && s.type === 'q' && view && view.state.round === s.round) rcount.textContent = progress.count + '/' + progress.eligible;
+    else rcount.textContent = L ? L.done.length + '/' + (L.done.length + L.wait.length) : '';
+    if (!rosterEl.classList.contains('open')) return;
+    var x = '<button type="button" class="ctl-x" data-r="close" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
+    var body;
+    var head;
+    if (ri < 0) {
+      head = '<h2>作答名單</h2><p>還沒開始任何一輪</p>';
+      body = '<p class="none">抽完出場順序、進到第一位主角後，這裡會列出誰答了、誰還沒答。</p>';
+    } else if (!L) {
+      head = '<h2>第 ' + (ri + 1) + ' 輪</h2><p>讀取中…</p>';
+      body = '';
+    } else {
+      var ph = view.state.round === ri ? view.state.phase : '';
+      var tag = view.state.revealed.indexOf(ri) >= 0 ? '已揭曉' : ({ open: '作答中', show: '作答中', closed: '已停止作答' }[ph] || '');
+      head = '<h2>第 ' + (ri + 1) + ' 輪・' + esc(L.name) + '</h2><p>' + (tag ? tag + '・' : '') + '主角本人不用作答</p>';
+      var list = function (arr, cls) {
+        return arr.length ? '<div class="roster-list">' + arr.map(function (p) {
+          return '<span class="' + cls + '">' + esc(p.name) + (p.helper ? '<small>小幫手</small>' : '') + '</span>';
+        }).join('') + '</div>' : '<p class="none">沒有人</p>';
+      };
+      body = '<div><h3 class="wait">還沒作答<b>' + L.wait.length + '</b></h3>' + list(L.wait, 'w') + '</div>' +
+        '<div><h3>已作答<b>' + L.done.length + '</b></h3>' + list(L.done, 'd') + '</div>';
+    }
+    rosterEl.innerHTML = '<div class="ctl-head"><div>' + head + '</div>' + x + '</div><div class="roster-body">' + body + '</div>';
+  }
+  function pollRoster() {
+    var my = ++rGen;
+    TT.admin('data').then(function (res) {
+      if (my !== rGen) return;
+      rosterData = res;
+      renderRoster();
+    }).catch(function () {});
+  }
+  function toggleRoster(show) {
+    var open = show === undefined ? !rosterEl.classList.contains('open') : show;
+    rosterEl.classList.toggle('open', open);
+    rbtn.classList.toggle('on', open);
+    clearInterval(rTimer);
+    rTimer = null;
+    if (open) {
+      togglePanel(false);
+      renderRoster();
+      pollRoster();
+      rTimer = setInterval(pollRoster, 3000);
+    }
+  }
+  rbtn.addEventListener('click', function () { rbtn.blur(); toggleRoster(); });
+  rosterEl.addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-r="close"]')) toggleRoster(false);
   });
 
   // 打開簡報時若還留著上次的揭曉或作答，直接打開控制台提醒
