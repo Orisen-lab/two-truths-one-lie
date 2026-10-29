@@ -104,6 +104,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
 .result.ok { color: var(--ok); }
 .result.bad { color: var(--bad); }
 .note { font-size: 14px; color: var(--muted); text-align: center; }
+.hand { font-size: 15px; font-weight: 700; color: var(--mustard); text-align: center; }
 .msg { font-size: 15px; color: var(--bad); text-align: center; min-height: 1.6em; }
 .wait-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--mustard); margin-right: 8px; animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
@@ -295,7 +296,8 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
       } else {
         foot = '<button type="button" class="btn" id="send"' + (picked && !sending ? '' : ' disabled') + '>' +
           (sending ? '送出中…' : (picked ? '送出第 ' + picked + ' 件' : '先選一件')) + '</button>' +
-          '<p class="note">送出後就不能改</p>';
+          '<p class="note">送出後就不能改</p>' +
+          (s.manual ? '<p class="hand">送不出去的話，<span class="nw">舉手比出第幾件，</span><span class="nw">小幫手會幫你登記</span></p>' : '');
       }
     } else if (s.phase === 'closed') {
       foot = '<p class="note">' + (myInfo.choice ? '已截止，你選了第 ' + myInfo.choice + ' 件' : '已截止，這一輪你沒有作答') + '</p>';
@@ -359,7 +361,11 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
           }
         }
       })
-      .catch(function () { errorMsg = '網路不穩，還沒確認送出，請再按一次。重複送出不會多算。'; })
+      .catch(function () {
+        errorMsg = state && state.manual
+          ? '網路不穩，還沒確認送出。可以再按一次，或舉手請小幫手幫你登記。'
+          : '網路不穩，還沒確認送出，請再按一次。重複送出不會多算。';
+      })
       .then(function () { sending = false; render(); });
   }
 
@@ -388,7 +394,7 @@ input[type="search"]:focus { outline: none; border-color: var(--mustard); }
     readState().then(function (s) {
       setNet(!!(s && s.ok));
       if (!s || !s.ok) return;
-      var key = s.round + '|' + s.phase + '|' + (s.epoch || 0);
+      var key = s.round + '|' + s.phase + '|' + (s.epoch || 0) + '|' + (s.manual ? 1 : 0) + '|' + (s.things || []).join('|');
       var changed = key !== lastKey;
       // 主持人清掉作答重來時，手機上的選擇也一起清掉
       var roundChanged = !state || state.round !== s.round || (state.epoch || 0) !== (s.epoch || 0);
