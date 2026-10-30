@@ -240,7 +240,7 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
 <button type="button" class="rbtn" id="rbtn" aria-label="作答名單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>名單<span class="c" id="rcount"></span></button>
 <aside class="roster" id="roster" aria-label="作答名單"></aside>
 
-<script src="host.js?v=20261029174442"></script>
+<script src="host.js?v=20261030100019"></script>
 <script>
 (function () {
   var stage = document.getElementById('stage');
@@ -862,6 +862,12 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; line-break: strict; word-break: n
   rbtn.addEventListener('click', function () { rbtn.blur(); toggleRoster(); });
   rosterEl.addEventListener('click', function (ev) {
     if (ev.target.closest('[data-r="close"]')) toggleRoster(false);
+  });
+  // 點名單以外的地方就收起來；畫面上的按鈕照常作用
+  document.addEventListener('click', function (ev) {
+    if (!rosterEl.classList.contains('open')) return;
+    if (ev.target.closest('#roster, #rbtn, [data-k="roster"]')) return;
+    toggleRoster(false);
   });
 
   // 打開簡報時若還留著上次的揭曉或作答，直接打開控制台提醒
